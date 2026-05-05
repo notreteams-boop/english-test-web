@@ -8,20 +8,11 @@ st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ"
 
 # Настройка нейросети
-if API_KEY != "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ":
+if API_KEY and API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    st.error("Пожалуйста, вставь свой API Key в коде (строка 8)!")
-
-# --- 2. ЗАГРУЗКА ТЕМ ---
-def load_topics():
-    try:
-        with open("topics.txt", "r", encoding="utf-8") as f:
-            return [line.strip() for line in f.readlines() if line.strip()]
-    except FileNotFoundError:
-        # Если файла нет, покажем примеры
-        return ["Education in the 21st century", "Environmental protection", "Technology and youth"]
+    st.error("Ошибка: API Key не настроен!")
 
 topics = load_topics()
 
@@ -39,7 +30,7 @@ user_text = st.text_area("2. Напиши или вставь сюда свое 
 if st.button("Проверить работу ✅"):
     if not user_text:
         st.warning("Сначала введи текст сочинения!")
-    elif API_KEY == "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ":
+    elif API_KEY == "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
         st.error("Ошибка: Не указан API Key в настройках сайта.")
     else:
         with st.spinner('Учитель ИИ внимательно проверяет твою работу...'):

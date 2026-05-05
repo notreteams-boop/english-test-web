@@ -4,17 +4,26 @@ import google.generativeai as genai
 # --- 1. НАСТРОЙКИ СТРАНИЦЫ ---
 st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 
-# ВСТАВЬ СВОЙ API KEY НИЖЕ (в кавычках)
-API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ"
+# Твой ключ (НЕ МЕНЯЙ ЕГО ТУТ, ПУСТЬ ОСТАЕТСЯ ТВОЙ)
+API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ" 
+
+# --- 2. ФУНКЦИЯ ЗАГРУЗКИ ТЕМ (Она должна быть первой!) ---
+def load_topics():
+    try:
+        with open("topics.txt", "r", encoding="utf-8") as f:
+            return [line.strip() for line in f.readlines() if line.strip()]
+    except FileNotFoundError:
+        return ["Education", "Environment", "Technology"]
+
+# Теперь вызываем функцию
+topics = load_topics()
 
 # Настройка нейросети
-if API_KEY and API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
+if API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    st.error("Ошибка: API Key не настроен!")
-
-topics = load_topics()
+    st.error("Пожалуйста, настройте API Key!")
 
 # --- 3. ИНТЕРФЕЙС САЙТА ---
 st.title("🚀 Подготовка к экзаменам с ИИ")

@@ -1,62 +1,54 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. НАСТРОЙКИ И КЛЮЧ ---
+# --- 1. НАСТРОЙКИ ---
 st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 
-# Твой рабочий ключ
-# --- НАСТРОЙКА ИИ ---
+# Твой ключ
 API_KEY = "AIzaSyBsETc7a3v_z98gmhDQPgKWo2WWUM7bzFg"
 genai.configure(api_key=API_KEY)
 
-# Пробуем модель 2.0 Flash - она самая стабильная из твоего списка
-# Обязательно с приставкой models/
-MODEL_NAME = 'models/gemini-2.0-flash' 
-model = genai.GenerativeModel(model_name=MODEL_NAME)
-# --- 2. ЗАГРУЗКА ТЕМ ---
+# Используем "умное" имя модели, которое само подстроится под систему
+MODEL_NAME = 'models/gemini-flash-latest'
+
+try:
+    model = genai.GenerativeModel(MODEL_NAME)
+except:
+    # Запасной вариант, если первый не сработал
+    model = genai.GenerativeModel('models/gemini-2.0-flash')
+
+# --- 2. ТЕМЫ ---
 def load_topics():
     try:
         with open("topics.txt", "r", encoding="utf-8") as f:
             return [line.strip() for line in f.readlines() if line.strip()]
-    except FileNotFoundError:
-        return ["Future of AI", "Global Warming", "Benefits of Reading"]
+    except:
+        return ["Education", "Technology", "Environment"]
 
 topics = load_topics()
 
 # --- 3. ИНТЕРФЕЙС ---
-st.title("🚀 Подготовка к экзаменам")
-st.subheader("Блок: Английский язык")
+st.title("🚀 Проверка сочинений")
 
-selected_topic = st.selectbox("1. Выбери тему:", topics)
-user_text = st.text_area("2. Напиши сочинение:", height=300)
+selected_topic = st.selectbox("Выбери тему:", topics)
+user_text = st.text_area("Вставь текст сочинения:", height=250)
 
-if st.button("Проверить работу ✅"):
+if st.button("Проверить ✅"):
     if user_text:
-        with st.spinner('ИИ анализирует текст...'):
+        with st.spinner('Связываюсь с ИИ...'):
             try:
-                prompt = f"""
-                Ты строгий учитель английского. Проверь сочинение на тему: "{selected_topic}".
-                Текст ученика: "{user_text}"
-                
-                Дай ответ по пунктам:
-                1. Оценка (0-10).
-                2. Список ошибок и как их исправить.
-                3. Рекомендации по лексике.
-                Отвечай на русском языке.
-                """
+                # Специальная инструкция для ИИ
+                prompt = f"Ты учитель. Проверь сочинение на тему '{selected_topic}': {user_text}. Оцени от 0 до 10 и исправь ошибки. Ответь на русском."
                 
                 response = model.generate_content(prompt)
-                st.markdown("---")
-                st.success("Разбор готов:")
+                st.success("Готово!")
                 st.write(response.text)
                 
             except Exception as e:
+                # Если опять лимит (429) или 404, выводим понятное сообщение
                 if "429" in str(e):
-                    st.error("Слишком много запросов! Подожди 60 секунд и попробуй снова.")
+                    st.warning("Google занят. Подожди ровно 1 минуту и нажми кнопку еще раз.")
                 else:
-                    st.error(f"Произошла ошибка: {e}")
+                    st.error(f"Техническая заминка: {e}")
     else:
-        st.warning("Сначала введи текст!")
-
-# Маленькая плашка внизу для красоты
-st.caption(f"Используемая модель: {MODEL_NAME}")
+        st.info("Напиши что-нибудь в поле выше!")

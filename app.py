@@ -1,28 +1,62 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. Твой ключ
-API_KEY = "AIzaSyBZqZ58Z7orJTOXU4KrCiBFK1pxu9nokc0"
+# --- 1. НАСТРОЙКИ И КЛЮЧ ---
+st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
+
+# Твой рабочий ключ
+API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ"
 genai.configure(api_key=API_KEY)
 
-st.title("Проверка связи с ИИ")
+# Указываем конкретную рабочую модель из твоего списка
+# Мы выбрали gemini-2.0-flash, так как она самая надежная
+MODEL_NAME = 'models/gemini-2.0-flash'
+model = genai.GenerativeModel(MODEL_NAME)
 
-# 2. Давай узнаем, какие модели ВООБЩЕ тебе доступны
-st.write("Список доступных тебе моделей:")
-try:
-    available_models = [m.name for m in genai.list_models()]
-    st.write(available_models)
-    
-    # Берем самую первую модель из списка доступных
-    first_model = available_models[0]
-    st.success(f"Пробуем подключиться к: {first_model}")
-    
-    model = genai.GenerativeModel(first_model)
-    
-    user_input = st.text_input("Напиши 'Hello' для проверки:")
-    if st.button("Спросить ИИ"):
-        response = model.generate_content(user_input)
-        st.write("Ответ ИИ:", response.text)
+# --- 2. ЗАГРУЗКА ТЕМ ---
+def load_topics():
+    try:
+        with open("topics.txt", "r", encoding="utf-8") as f:
+            return [line.strip() for line in f.readlines() if line.strip()]
+    except FileNotFoundError:
+        return ["Future of AI", "Global Warming", "Benefits of Reading"]
 
-except Exception as e:
-    st.error(f"Ошибка: {e}")
+topics = load_topics()
+
+# --- 3. ИНТЕРФЕЙС ---
+st.title("🚀 Подготовка к экзаменам")
+st.subheader("Блок: Английский язык")
+
+selected_topic = st.selectbox("1. Выбери тему:", topics)
+user_text = st.text_area("2. Напиши сочинение:", height=300)
+
+if st.button("Проверить работу ✅"):
+    if user_text:
+        with st.spinner('ИИ анализирует текст...'):
+            try:
+                prompt = f"""
+                Ты строгий учитель английского. Проверь сочинение на тему: "{selected_topic}".
+                Текст ученика: "{user_text}"
+                
+                Дай ответ по пунктам:
+                1. Оценка (0-10).
+                2. Список ошибок и как их исправить.
+                3. Рекомендации по лексике.
+                Отвечай на русском языке.
+                """
+                
+                response = model.generate_content(prompt)
+                st.markdown("---")
+                st.success("Разбор готов:")
+                st.write(response.text)
+                
+            except Exception as e:
+                if "429" in str(e):
+                    st.error("Слишком много запросов! Подожди 60 секунд и попробуй снова.")
+                else:
+                    st.error(f"Произошла ошибка: {e}")
+    else:
+        st.warning("Сначала введи текст!")
+
+# Маленькая плашка внизу для красоты
+st.caption(f"Используемая модель: {MODEL_NAME}")

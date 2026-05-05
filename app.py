@@ -8,7 +8,7 @@ st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ"
 
 # Настройка нейросети
-if API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
+if API_KEY != "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ":
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:

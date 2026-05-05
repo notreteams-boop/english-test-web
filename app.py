@@ -5,14 +5,14 @@ import google.generativeai as genai
 st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 
 # Твой рабочий ключ
+# --- НАСТРОЙКА ИИ ---
 API_KEY = "AIzaSyBsETc7a3v_z98gmhDQPgKWo2WWUM7bzFg"
 genai.configure(api_key=API_KEY)
 
-# Указываем конкретную рабочую модель из твоего списка
-# Мы выбрали gemini-2.0-flash, так как она самая надежная
-MODEL_NAME = 'models/gemini-1.5-flash'
-model = genai.GenerativeModel(MODEL_NAME)
-
+# Пробуем модель 2.0 Flash - она самая стабильная из твоего списка
+# Обязательно с приставкой models/
+MODEL_NAME = 'models/gemini-2.0-flash' 
+model = genai.GenerativeModel(model_name=MODEL_NAME)
 # --- 2. ЗАГРУЗКА ТЕМ ---
 def load_topics():
     try:

@@ -5,7 +5,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 
 # Твой ключ (НЕ МЕНЯЙ ЕГО ТУТ, ПУСТЬ ОСТАЕТСЯ ТВОЙ)
-API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ" 
+API_KEY = "AIzaSyBZqZ58Z7orJTOXU4KrCiBFK1pxu9nokc0" 
 
 # --- 2. ФУНКЦИЯ ЗАГРУЗКИ ТЕМ (Она должна быть первой!) ---
 def load_topics():
@@ -21,7 +21,7 @@ topics = load_topics()
 # Настройка нейросети
 if API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel(model_name='gemini-2.0-flash-lite')
+    model = genai.GenerativeModel(model_name='gemini-1.5-flash')
 else:
     st.error("Пожалуйста, настройте API Key!")
 

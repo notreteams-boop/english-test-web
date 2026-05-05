@@ -21,7 +21,7 @@ topics = load_topics()
 # Настройка нейросети
 if API_KEY != "ЗДЕСЬ_ТВОЙ_API_КЛЮЧ":
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel(model_name='gemini-2.5-flash-lite-preview-09-2025')
 else:
     st.error("Пожалуйста, настройте API Key!")
 

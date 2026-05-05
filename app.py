@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # 1. Твой ключ
-API_KEY = "AIzaSyBEgXRMal1511eD3H9mq5V7dKBTNPPTuLQ"
+API_KEY = "AIzaSyBZqZ58Z7orJTOXU4KrCiBFK1pxu9nokc0"
 genai.configure(api_key=API_KEY)
 
 st.title("Проверка связи с ИИ")

@@ -2,19 +2,48 @@ import streamlit as st
 import google.generativeai as genai
 import random
 
-# --- 1. КОНФИГУРАЦИЯ И СТИЛИ ---
+# --- 1. КОНФИГУРАЦИЯ И УЛУЧШЕННЫЕ СТИЛИ ---
 st.set_page_config(page_title="Exam Simulator PRO", page_icon="📝", layout="centered")
 
 st.markdown("""
     <style>
+    /* Основной фон и шрифты */
     .stApp { background-color: #ffffff; }
     .main .block-container { padding-top: 2rem; max-width: 850px; }
-    h1, h2, h3, p, li { color: #000000 !important; font-family: 'Times New Roman', serif; }
+    
+    /* Цвет текста для заголовков и обычного текста */
+    h1, h2, h3, p, li, span, label { 
+        color: #000000 !important; 
+        font-family: 'Times New Roman', serif; 
+    }
+
+    /* Стиль поля ввода: белый фон, черный текст, черная рамка */
     .stTextArea textarea { 
         background-color: #ffffff !important; 
         border: 1px solid #000000 !important; 
+        color: #000000 !important;
         font-size: 16px; 
     }
+
+    /* СТИЛЬ КНОПОК: делаем их четкими */
+    div.stButton > button {
+        background-color: #000000 !important; /* Черный фон кнопки */
+        color: #ffffff !important;           /* БЕЛЫЙ текст на кнопке */
+        border-radius: 5px;
+        border: 1px solid #000000;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        width: 100%;                        /* Кнопка на всю ширину */
+        transition: 0.3s;
+    }
+
+    /* Эффект при наведении на кнопку */
+    div.stButton > button:hover {
+        background-color: #333333 !important;
+        border-color: #333333 !important;
+        color: #ffffff !important;
+    }
+
     .exam-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)

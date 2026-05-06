@@ -5,7 +5,6 @@ import random
 # --- 1. CONFIG & STYLES ---
 st.set_page_config(page_title="Exam Simulator PRO", page_icon="📝", layout="centered")
 
-# CSS стили запакованы строго в многострочную строку
 st.markdown("""
 <style>
     .stApp { background-color: #ffffff; }
@@ -40,11 +39,15 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    [data-baseweb="select"] * { color: #000000 !important; }
-
     .exam-header { 
         border-bottom: 2px solid #000000; 
         margin-bottom: 20px; 
+    }
+    
+    .result-box {
+        padding: 20px;
+        border: 1px dashed #000000;
+        background-color: #f9f9f9;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -57,58 +60,81 @@ except Exception as e:
     st.error("API Key not found in Secrets!")
     st.stop()
 
-# --- 3. TOPICS LOGIC ---
-def load_topics():
+# --- 3. SESSION STATE ИНИЦИАЛИЗАЦИЯ ---
+if 'page' not in st.session_state:
+    st.session_state.page = 'input'  # Начальная страница — ввод текста
+if 'evaluation' not in st.session_state:
+    st.session_state.evaluation = ""
+if 'current_topic' not in st.session_state:
+    # Загрузка тем
     try:
         with open("topics.txt", "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f.readlines() if line.strip()]
-            return lines if lines else ["Standard Exam Topic"]
+            topics = [line.strip() for line in f.readlines() if line.strip()]
+            st.session_state.current_topic = random.choice(topics) if topics else "Standard Exam Topic"
     except:
-        return ["Education in the 21st Century"]
+        st.session_state.current_topic = "Education in the 21st Century"
 
-all_topics = load_topics()
+# --- 4. СТРАНИЦА ПРОВЕРКИ (РЕЗУЛЬТАТЫ) ---
+if st.session_state.page == 'results':
+    st.markdown("<div class='exam-header'><h1>Evaluation Report</h1></div>", unsafe_allow_html=True)
+    st.subheader(f"Topic: {st.session_state.current_topic}")
+    
+    st.markdown("---")
+    st.markdown(st.session_state.evaluation)
+    st.markdown("---")
+    
+    if st.button("⬅️ WRITE ANOTHER ESSAY"):
+        st.session_state.page = 'input'
+        st.session_state.evaluation = ""
+        # Выбираем новую тему для следующего раза
+        try:
+            with open("topics.txt", "r", encoding="utf-8") as f:
+                topics = [line.strip() for line in f.readlines() if line.strip()]
+                st.session_state.current_topic = random.choice(topics)
+        except:
+            pass
+        st.rerun()
 
-if 'current_topic' not in st.session_state:
-    st.session_state.current_topic = random.choice(all_topics)
+# --- 5. ГЛАВНАЯ СТРАНИЦА (ВВОД ТЕКСТА) ---
+else:
+    st.markdown("<div class='exam-header'><h1>Task 2</h1><h2>Essay (16 points)</h2></div>", unsafe_allow_html=True)
 
-# --- 4. INTERFACE ---
-st.markdown("<div class='exam-header'><h1>Task 2</h1><h2>Essay (16 points)</h2></div>", unsafe_allow_html=True)
+    if st.button("GET NEW TOPIC 🎲"):
+        try:
+            with open("topics.txt", "r", encoding="utf-8") as f:
+                topics = [line.strip() for line in f.readlines() if line.strip()]
+                st.session_state.current_topic = random.choice(topics)
+                st.rerun()
+        except:
+            pass
 
-if st.button("GET NEW TOPIC 🎲"):
-    st.session_state.current_topic = random.choice(all_topics)
-    st.rerun()
+    st.subheader(f"Topic: {st.session_state.current_topic}")
+    st.write("Write an essay in which you formulate the problem, propose two solutions, and conclude.")
+    st.write("**Target: 250-300 words.**")
 
-st.subheader(f"Topic: {st.session_state.current_topic}")
-st.write("Write an essay in which you formulate the problem, propose two solutions, and conclude.")
-st.write("**Target: 250-300 words.**")
+    user_text = st.text_area("Your Response:", height=400, placeholder="Start writing here...")
 
-user_text = st.text_area("Your Response:", height=400, placeholder="Start writing here...")
+    word_count = len(user_text.split())
+    st.write(f"Word count: {word_count}")
 
-word_count = len(user_text.split())
-st.write(f"Word count: {word_count}")
-
-# --- 5. EVALUATION ---
-if st.button("SUBMIT FOR EVALUATION"):
-    if word_count < 100:
-        st.error("Text is too short (min 100 words).")
-    elif user_text:
-        with st.spinner('Examiner is evaluating...'):
-            try:
-                prompt = f"""
-                Ты строгий экзаменатор. Проверь эссе на тему '{st.session_state.current_topic}'.
-                1. Сначала выведи текст ученика, выделяя ошибки жирным и в скобках давая исправленный вариант.
-                2. Ниже напиши краткий разбор ошибок.
-                3. В конце поставь баллы (0-5) по критериям VISC:
-                - Sagatavota runa
-                - Mijiedarbiba
-                - Valodas bagatiba
-                - Gramatika
-                - Pludums
-                Отвечай на русском.
-                Текст: {user_text}
-                """
-                response = model.generate_content(prompt)
-                st.markdown("---")
-                st.markdown(response.text)
-            except Exception as e:
-                st.error(f"Error during evaluation: {str(e)}")
+    if st.button("SUBMIT FOR EVALUATION"):
+        if word_count < 100:
+            st.error("Text is too short (min 100 words).")
+        elif user_text:
+            with st.spinner('Examiner is evaluating...'):
+                try:
+                    prompt = f"""
+                    Ты строгий экзаменатор VISC. Оцени эссе на тему '{st.session_state.current_topic}'.
+                    1. Выведи текст ученика, выделяя ошибки жирным и в скобках исправленный вариант: **error (correction)**.
+                    2. Сделай краткий разбор "List of Corrections".
+                    3. Поставь баллы (0-5) по критериям: Sagatavota runa, Mijiedarbiba, Valodas bagatiba, Gramatika, Pludums.
+                    Текст ученика: {user_text}
+                    Отвечай на русском.
+                    """
+                    response = model.generate_content(prompt)
+                    # Сохраняем результат и переключаем страницу
+                    st.session_state.evaluation = response.text
+                    st.session_state.page = 'results'
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error during evaluation: {str(e)}")

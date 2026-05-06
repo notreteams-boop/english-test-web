@@ -4,206 +4,157 @@ import random
 import re
 
 # --- 1. CONFIG & STYLES ---
-st.set_page_config(page_title="Exam Simulator PRO", page_icon="📝", layout="centered")
+st.set_page_config(page_title="English Exam Coach", page_icon="🎓", layout="centered")
 
 st.markdown("""
 <style>
     .stApp { background-color: #ffffff; }
-    h1, h2, h3, p, li, span, label, div { 
-        color: #000000 !important; 
-        font-family: 'Times New Roman', serif; 
-    }
-
-    /* Светлая плашка для Overall Score */
-    .overall-box {
-        background-color: #f0f2f6;
-        color: #000000 !important;
-        padding: 20px;
-        text-align: center;
-        border: 2px solid #000000;
-        border-radius: 10px;
-        margin-bottom: 20px;
-    }
-    .overall-box h2 { color: #000000 !important; margin: 0; font-size: 36px; }
-
-    /* Сетка критериев */
-    .criteria-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 10px;
-        margin-bottom: 30px;
-    }
-    .criterion-card {
-        border: 1px solid #000000;
-        padding: 10px;
-        text-align: center;
-        border-radius: 5px;
-        background-color: #ffffff;
-    }
-    .criterion-name { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; }
-    .criterion-score { font-size: 20px; font-weight: bold; }
-
-    /* Рамка для объявления в Task 1 */
-    .announcement-box {
-        border: 2px solid #000000;
-        padding: 20px;
-        margin: 20px 0;
-        background-color: #fff;
-        line-height: 1.5;
-    }
-
-    /* Стиль кнопок */
-    div.stButton > button {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        border: 1px solid #000000 !important;
-        border-radius: 5px;
-        font-weight: bold;
-        width: 100%;
-        height: 3em;
-        transition: 0.3s;
-    }
-    div.stButton > button:hover {
-        background-color: #000000 !important;
-        color: #ffffff !important;
-    }
-
-    .exam-header { border-bottom: 2px solid #000000; margin-bottom: 20px; padding-bottom: 10px; }
+    h1, h2, h3, p, li, span, label, div { color: #000000 !important; font-family: 'Times New Roman', serif; }
+    .overall-box { background-color: #f8f9fa; padding: 20px; text-align: center; border: 2px solid #000; border-radius: 10px; margin-bottom: 20px; }
+    .overall-box h2 { color: #000 !important; font-size: 36px; margin: 0; }
+    .announcement-box { border: 2px solid #000; padding: 15px; margin: 15px 0; background-color: #fff; }
+    div.stButton > button { background-color: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-weight: bold; width: 100%; transition: 0.3s; }
+    div.stButton > button:hover { background-color: #000 !important; color: #fff !important; }
+    .drill-label { background-color: #000; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-bottom: 10px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
 
 # --- 2. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('models/gemini-flash-latest')
+    model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
 except:
-    st.error("API Key error! Please check your Streamlit Secrets.")
+    st.error("API Key Error!")
     st.stop()
 
 # --- 3. SESSION STATE ---
 if 'page' not in st.session_state: st.session_state.page = 'home'
-if 'current_task' not in st.session_state: st.session_state.current_task = None
-if 'results_data' not in st.session_state: st.session_state.results_data = {}
+if 'mode' not in st.session_state: st.session_state.mode = None # 'full' or 'drill'
+if 'drill_type' not in st.session_state: st.session_state.drill_type = None
 if 'current_topic' not in st.session_state: st.session_state.current_topic = ""
+if 'results_data' not in st.session_state: st.session_state.results_data = {}
 
-def load_random_topic(task_type):
-    filename = "topics_task1.txt" if task_type == "Task 1" else "topics.txt"
+def get_topic():
     try:
-        with open(filename, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f.readlines() if line.strip()]
-            return random.choice(lines)
-    except:
-        return "Error: File not found or empty."
+        with open("topics.txt", "r", encoding="utf-8") as f:
+            return random.choice([l.strip() for l in f.readlines() if l.strip()])
+    except: return "Global Warming and its impact."
 
 # --- PAGE: HOME ---
 if st.session_state.page == 'home':
-    st.markdown("<div class='exam-header'><h1>English Exam Preparation</h1></div>", unsafe_allow_html=True)
-    st.write("### Choose your practice task:")
+    st.title("🇬🇧 English Exam Coach")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("TASK 1: E-mail (Formal/Neutral)"):
-            st.session_state.current_task = "Task 1"
-            st.session_state.current_topic = load_random_topic("Task 1")
+    st.subheader("🏁 Full Task Simulation")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Task 1: E-mail"):
+            st.session_state.mode = 'full'
+            st.session_state.drill_type = "Task 1 Email"
             st.session_state.page = 'input'
             st.rerun()
-    with col2:
-        if st.button("TASK 2: Essay (Problem/Solution)"):
-            st.session_state.current_task = "Task 2"
-            st.session_state.current_topic = load_random_topic("Task 2")
+    with c2:
+        if st.button("Task 2: Full Essay"):
+            st.session_state.mode = 'full'
+            st.session_state.drill_type = "Task 2 Essay"
+            st.session_state.page = 'input'
+            st.rerun()
+
+    st.write("---")
+    st.subheader("🎯 Section Drills (Task 2 Focus)")
+    d1, d2, d3 = st.columns(3)
+    with d1:
+        if st.button("Introduction"):
+            st.session_state.mode = 'drill'
+            st.session_state.drill_type = "Introduction"
+            st.session_state.page = 'input'
+            st.rerun()
+    with d2:
+        if st.button("Solutions"):
+            st.session_state.mode = 'drill'
+            st.session_state.drill_type = "Solutions"
+            st.session_state.page = 'input'
+            st.rerun()
+    with d3:
+        if st.button("Conclusion"):
+            st.session_state.mode = 'drill'
+            st.session_state.drill_type = "Conclusion"
             st.session_state.page = 'input'
             st.rerun()
 
 # --- PAGE: INPUT ---
 elif st.session_state.page == 'input':
-    st.markdown(f"<div class='exam-header'><h1>{st.session_state.current_task} Practice</h1></div>", unsafe_allow_html=True)
+    if not st.session_state.current_topic: 
+        st.session_state.current_topic = get_topic()
+
+    st.markdown(f"<span class='drill-label'>{st.session_state.drill_type.upper()} MODE</span>", unsafe_allow_html=True)
+    st.subheader(f"Topic: {st.session_state.current_topic}")
     
-    if st.button("Get New Topic 🎲"):
-        st.session_state.current_topic = load_random_topic(st.session_state.current_task)
-        st.rerun()
+    # Инструкции в зависимости от режима
+    instructions = {
+        "Introduction": "Write only the introduction. Paraphrase the topic and clearly state the problem.",
+        "Solutions": "Write the body paragraphs. Propose 2 solutions with examples and consequences.",
+        "Conclusion": "Write only the conclusion. Summarize your points and give a final thought.",
+        "Task 2 Essay": "Write a full essay (250-300 words).",
+        "Task 1 Email": "Write a formal/neutral email (120-150 words) based on the announcement."
+    }
+    st.info(instructions.get(st.session_state.drill_type, ""))
 
-    if st.session_state.current_task == "Task 1":
-        st.write("#### Read the announcement and write your e-mail:")
-        st.markdown(f"<div class='announcement-box'>{st.session_state.current_topic}</div>", unsafe_allow_html=True)
-        st.info("Write 120-150 words. Focus on: role choice, availability, skills, and asking questions.")
-    else:
-        st.write("#### Essay Topic:")
-        st.subheader(st.session_state.current_topic)
-        st.info("Write 250-300 words. Focus on: problem formulation, 2 solutions, and conclusion.")
-
-    user_text = st.text_area("Your Response:", height=380, placeholder="Start typing here...")
-    word_count = len(user_text.split())
-    st.write(f"**Word count: {word_count}**")
-
-    if st.button("SUBMIT FOR EVALUATION"):
-        min_limit = 50 if st.session_state.current_task == "Task 1" else 100
-        if word_count < min_limit:
-            st.error(f"Your text is too short ({word_count} words). Minimum required is {min_limit} words.")
-        else:
-            with st.spinner('The examiner is checking your work...'):
+    user_text = st.text_area("Type your text:", height=300)
+    
+    col_back, col_sub = st.columns([1, 4])
+    with col_back:
+        if st.button("⬅️ Back"): 
+            st.session_state.page = 'home'
+            st.session_state.current_topic = ""
+            st.rerun()
+    with col_sub:
+        if st.button("SUBMIT FOR FEEDBACK"):
+            with st.spinner("Analyzing..."):
+                # Специальный промпт для секций
                 prompt = f"""
-                You are a strict examiner. Analyze this {st.session_state.current_task}. 
-                Topic/Announcement: {st.session_state.current_topic}
+                Act as an IELTS/VISC examiner. Analyze this {st.session_state.drill_type} for the topic: {st.session_state.current_topic}.
                 
-                Strictly follow this format for your response:
-                SCORE_C1: [0-5]
-                SCORE_C2: [0-5]
-                SCORE_C3: [0-5]
-                SCORE_C4: [0-5]
-                SCORE_C5: [0-5]
-                TOTAL: [sum of all scores]
-                TEXT: [Rewritten version of the student's text. You MUST highlight every correction by making it bold and putting the fix in brackets, like this: **wrong (right)**. Example: **She go (She goes)** to school.]
-
-                Student's text: {user_text}
+                Format:
+                SCORE: [0-10 for drills, 0-25 for full tasks]
+                FEEDBACK: [Specific advice on how to improve this specific section]
+                TEXT: [Corrected text with **bold (fixes)**]
+                
+                Student text: {user_text}
                 """
-                try:
-                    response_obj = model.generate_content(prompt)
-                    resp = response_obj.text
-                    
-                    def ex(label, text):
-                        m = re.search(rf'{label}:\s*(\d+)', text)
-                        return m.group(1) if m else "0"
-
-                    st.session_state.results_data = {
-                        'c1': ex('SCORE_C1', resp),
-                        'c2': ex('SCORE_C2', resp),
-                        'c3': ex('SCORE_C3', resp),
-                        'c4': ex('SCORE_C4', resp),
-                        'c5': ex('SCORE_C5', resp),
-                        'total': ex('TOTAL', resp),
-                        'text': resp.split("TEXT:")[1].strip() if "TEXT:" in resp else user_text
-                    }
-                    st.session_state.page = 'results'
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Limit reached or API error. Wait 1 minute. Error: {e}")
+                resp = model.generate_content(prompt).text
+                
+                # Парсинг (упрощенный для гибкости)
+                score = re.search(r"SCORE:\s*(\d+)", resp)
+                feedback = re.search(r"FEEDBACK:(.*?)TEXT:", resp, re.DOTALL)
+                text_corr = resp.split("TEXT:")[1] if "TEXT:" in resp else "Error parsing"
+                
+                st.session_state.results_data = {
+                    "score": score.group(1) if score else "N/A",
+                    "feedback": feedback.group(1).strip() if feedback else "Keep practicing!",
+                    "text": text_corr.strip()
+                }
+                st.session_state.page = 'results'
+                st.rerun()
 
 # --- PAGE: RESULTS ---
 elif st.session_state.page == 'results':
-    data = st.session_state.results_data
-    st.markdown("<div class='exam-header'><h1>Evaluation Report</h1></div>", unsafe_allow_html=True)
+    res = st.session_state.results_data
+    max_score = 10 if st.session_state.mode == 'drill' else 25
     
     st.markdown(f"""
-        <div class="overall-box">
-            <p style="margin:0; font-weight: bold;">TOTAL SCORE</p>
-            <h2>{data.get('total', 0)} / 25</h2>
+        <div class='overall-box'>
+            <p>SCORE FOR {st.session_state.drill_type.upper()}</p>
+            <h2>{res['score']} / {max_score}</h2>
         </div>
     """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-        <div class="criteria-grid">
-            <div class="criterion-card"><span class="criterion-name">Sagatavota</span><span class="criterion-score">{data.get('c1', 0)}</span></div>
-            <div class="criterion-card"><span class="criterion-name">Mijiedarbība</span><span class="criterion-score">{data.get('c2', 0)}</span></div>
-            <div class="criterion-card"><span class="criterion-name">Bagātība</span><span class="criterion-score">{data.get('c3', 0)}</span></div>
-            <div class="criterion-card"><span class="criterion-name">Gramatika</span><span class="criterion-score">{data.get('c4', 0)}</span></div>
-            <div class="criterion-card"><span class="criterion-name">Plūdums</span><span class="criterion-score">{data.get('c5', 0)}</span></div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.subheader("Revised Text & Corrections")
-    st.markdown(data.get('text', ''))
     
-    st.write("---")
-    if st.button("⬅️ PRACTICE AGAIN"):
+    st.subheader("💡 Examiner's Feedback")
+    st.write(res['feedback'])
+    
+    st.subheader("📝 Corrections")
+    st.markdown(res['text'])
+    
+    if st.button("Try Another Exercise"):
         st.session_state.page = 'home'
+        st.session_state.current_topic = ""
         st.rerun()

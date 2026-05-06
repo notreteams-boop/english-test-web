@@ -2,22 +2,20 @@ import streamlit as st
 import google.generativeai as genai
 import random
 
-# --- 1. КОНФИГУРАЦИЯ И СТИЛИ ---
+# --- 1. CONFIG & STYLES ---
 st.set_page_config(page_title="Exam Simulator PRO", page_icon="📝", layout="centered")
 
+# CSS стили запакованы строго в многострочную строку
 st.markdown("""
-    <style>
-    /* Фон и общие настройки */
+<style>
     .stApp { background-color: #ffffff; }
     .main .block-container { padding-top: 2rem; max-width: 850px; }
     
-    /* Весь текст на странице делаем черным */
     h1, h2, h3, p, li, span, label, div { 
         color: #000000 !important; 
         font-family: 'Times New Roman', serif; 
     }
 
-    /* ПОЛЕ ВВОДА: черный текст при печати */
     .stTextArea textarea { 
         background-color: #ffffff !important; 
         border: 1px solid #000000 !important; 
@@ -27,7 +25,6 @@ st.markdown("""
         font-family: 'Arial', sans-serif !important;
     }
 
-    /* КНОПКИ: черный фон, белый текст */
     div.stButton > button {
         background-color: #000000 !important;
         color: #ffffff !important;
@@ -43,16 +40,16 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Исправление цвета в выпадающих списках */
-    [data-baseweb="select"] * {
-        color: #000000 !important;
+    [data-baseweb="select"] * { color: #000000 !important; }
+
+    .exam-header { 
+        border-bottom: 2px solid #000000; 
+        margin-bottom: 20px; 
     }
+</style>
+""", unsafe_allow_html=True)
 
-    .exam-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- 2. ПОДКЛЮЧЕНИЕ КЛЮЧА (SECRETS) ---
+# --- 2. API KEY SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('models/gemini-flash-latest')
@@ -60,7 +57,7 @@ except Exception as e:
     st.error("API Key not found in Secrets!")
     st.stop()
 
-# --- 3. ЛОГИКА ТЕМ ---
+# --- 3. TOPICS LOGIC ---
 def load_topics():
     try:
         with open("topics.txt", "r", encoding="utf-8") as f:
@@ -74,7 +71,7 @@ all_topics = load_topics()
 if 'current_topic' not in st.session_state:
     st.session_state.current_topic = random.choice(all_topics)
 
-# --- 4. ИНТЕРФЕЙС ---
+# --- 4. INTERFACE ---
 st.markdown("<div class='exam-header'><h1>Task 2</h1><h2>Essay (16 points)</h2></div>", unsafe_allow_html=True)
 
 if st.button("GET NEW TOPIC 🎲"):
@@ -82,17 +79,15 @@ if st.button("GET NEW TOPIC 🎲"):
     st.rerun()
 
 st.subheader(f"Topic: {st.session_state.current_topic}")
-
-# Используем обычный markdown без спецсимволов внутри кода
-st.markdown("Write an essay in which you formulate the problem, propose two solutions, and conclude.")
-st.markdown("**Target: 250-300 words.**")
+st.write("Write an essay in which you formulate the problem, propose two solutions, and conclude.")
+st.write("**Target: 250-300 words.**")
 
 user_text = st.text_area("Your Response:", height=400, placeholder="Start writing here...")
 
 word_count = len(user_text.split())
 st.write(f"Word count: {word_count}")
 
-# --- 5. ПРОВЕРКА ---
+# --- 5. EVALUATION ---
 if st.button("SUBMIT FOR EVALUATION"):
     if word_count < 100:
         st.error("Text is too short (min 100 words).")
@@ -100,110 +95,20 @@ if st.button("SUBMIT FOR EVALUATION"):
         with st.spinner('Examiner is evaluating...'):
             try:
                 prompt = f"""
-                Ты — строгий экзаменатор VISC. Оцени эссе на тему: "{st.session_state.current_topic}".
-                
-                1. Сначала выведи текст ученика. Ошибки выдели жирным и в скобках напиши исправление, например: "He **go (goes)** to school".
-                2. Раздел "Corrections": кратко объясни ошибки.
-                3. Раздел "Scores" (0-5 за каждый):
-                   - Sagatavotā runa: /5
-                   - Mijiedarbība: /5
-                   - Valodas bagātība: /5
-                   - Valodas lietojuma pareзиба: /5
-                   - Valodas плудумс: /5
-                ИТОГ: Сумма/25.
-                
-                Текст: {user_text}
+                Ты строгий экзаменатор. Проверь эссе на тему '{st.session_state.current_topic}'.
+                1. Сначала выведи текст ученика, выделяя ошибки жирным и в скобках давая исправленный вариант.
+                2. Ниже напиши краткий разбор ошибок.
+                3. В конце поставь баллы (0-5) по критериям VISC:
+                - Sagatavota runa
+                - Mijiedarbiba
+                - Valodas bagatiba
+                - Gramatika
+                - Pludums
                 Отвечай на русском.
+                Текст: {user_text}
                 """
                 response = model.generate_content(prompt)
                 st.markdown("---")
                 st.markdown(response.text)
             except Exception as e:
-                st.error(f"Error: {e}")    
-
-    div.stButton > button:hover {
-        background-color: #444444 !important;
-        color: #ffffff !important;
-    }
-
-    /* Исправляем цвет текста внутри выпадающих списков и других виджетов */
-    .stSelectbox div[data-baseweb="select"] > div {
-        color: #000000 !important;
-        background-color: #ffffff !important;
-    }
-    
-    .exam-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
-    </style>
-# --- 2. ПОДКЛЮЧЕНИЕ КЛЮЧА ---
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('models/gemini-flash-latest')
-except:
-    st.error("Check your Streamlit Secrets for GEMINI_API_KEY")
-    st.stop()
-
-# --- 3. ЛОГИКА ТЕМ (РАНДОМАЙЗЕР) ---
-def load_topics():
-    try:
-        with open("topics.txt", "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f.readlines() if line.strip()]
-            return lines if lines else ["Standard Exam Topic"]
-    except:
-        return ["Education in the 21st Century"]
-
-all_topics = load_topics()
-
-# Используем st.session_state, чтобы тема не "прыгала" при вводе текста
-if 'current_topic' not in st.session_state:
-    st.session_state.current_topic = random.choice(all_topics)
-
-# --- 4. ИНТЕРФЕЙС ---
-st.markdown("<div class='exam-header'><h1>Task 2</h1><h2>Essay (16 points)</h2></div>", unsafe_allow_html=True)
-
-# Кнопка для выбора новой случайной темы
-if st.button("GET NEW TOPIC 🎲"):
-    st.session_state.current_topic = random.choice(all_topics)
-    st.rerun()
-
-st.subheader(f"Topic: {st.session_state.current_topic}")
-
-st.markdown("""
-**Instructions:**
-Write an essay in which you formulate the problem, propose two solutions, and conclude.
-**Target: 250–300 words.**
-""")
-
-user_text = st.text_area("Your Response:", height=400, placeholder="Start writing here...")
-
-word_count = len(user_text.split())
-st.write(f"**Word count: {word_count}**")
-
-# --- 5. ПРОВЕРКА ---
-if st.button("SUBMIT FOR EVALUATION"):
-    if word_count < 100:
-        st.error("Text is too short (min 100 words).")
-    elif user_text:
-        with st.spinner('Examiner is evaluating...'):
-            try:
-                # Тот самый строгий промпт с жирным выделением ошибок
-                prompt = f"""
-                Ты — строгий экзаменатор VISC. Оцени эссе на тему: "{st.session_state.current_topic}".
-                
-                1. Сначала выведи текст ученика. Ошибки выдели жирным и в скобках напиши исправление, например: "He **go (goes)** to school".
-                2. Раздел "Corrections": кратко объясни ошибки.
-                3. Раздел "Scores" (0-5 за каждый):
-                   - Sagatavotā runa: /5
-                   - Mijiedarbība: /5
-                   - Valodas bagātība: /5
-                   - Valodas lietojuma pareizība: /5
-                   - Valodas plūdums: /5
-                ИТОГ: Сумма/25.
-                
-                Текст: {user_text}
-                Отвечай на русском.
-                """
-                response = model.generate_content(prompt)
-                st.markdown("---")
-                st.markdown(response.text)
-            except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Error during evaluation: {str(e)}")

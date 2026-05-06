@@ -104,69 +104,83 @@ if st.session_state.page == 'home':
 
 # --- PAGE: INPUT ---
 # --- PAGE: INPUT ---
+# --- PAGE: INPUT ---
 elif st.session_state.page == 'input':
-    if not st.session_state.current_topic: 
-        st.session_state.current_topic = get_topic()
+    # Выбираем случайную тему, если она еще не выбрана
+    if not st.session_state.current_topic:
+        from topics import TASKS_2
+        st.session_state.current_topic = random.choice(TASKS_2)
 
-    st.markdown(f"<span style='background-color: #000; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px;'>{st.session_state.drill_type.upper()} MODE</span>", unsafe_allow_html=True)
+    topic = st.session_state.current_topic
+
+    # Оформление заголовка как на скриншоте
+    st.markdown(f"""
+        <div style="font-family: 'Times New Roman', serif; color: #000;">
+            <p style="margin-bottom:0;"><b>Task 2</b></p>
+            <p style="margin-bottom:0;"><i>Essay (16 points)</i></p>
+            <p><b>You should spend about 55 minutes on this task.</b></p>
+            <p>You are participating in an international youth newspaper essay competition on <b>{topic['title']}</b>. 
+            Read the information provided and write an essay in which you:</p>
+            <ul>
+                <li>formulate the problem raised in the sources and explain why it should be addressed;</li>
+                <li>propose and support at least two solutions to the problem which address the causes;</li>
+                <li>come to a conclusion.</li>
+            </ul>
+            <p><b>Write between 250–300 words. Texts shorter than 100 words will not be evaluated.</b></p>
+            <p>Do not forget to use “quotation marks” if you decide to quote a phrase from the sources.</p>
+            
+            <p style="margin-top:20px; margin-bottom:5px;"><b>Source 1:</b></p>
+            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
+                {topic['source1']}
+            </div>
+
+            <p style="margin-bottom:5px;"><b>Source 2:</b></p>
+            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
+                {topic['source2']}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Поле для ввода
+    user_text = st.text_area("Write your essay here:", height=400, placeholder="Start typing...")
     
-    if st.button("New Topic 🎲"):
-        st.session_state.current_topic = get_topic()
-        st.rerun()
-
-    st.subheader(f"Topic: {st.session_state.current_topic}")
-    
-    # Инструкции в зависимости от выбранного режима
-    instructions = {
-        "Introduction": "Write only the introduction. Paraphrase the topic and clearly state the problem.",
-        "Solutions": "Write the body paragraphs. Propose 2 solutions with examples and consequences.",
-        "Conclusion": "Write only the conclusion. Summarize your points and give a final thought.",
-        "Task 2 Essay": "Write a full essay (250-300 words).",
-        "Task 1 Email": "Write a formal/neutral email (120-150 words) based on the announcement."
-    }
-    st.info(instructions.get(st.session_state.drill_type, ""))
-
-    user_text = st.text_area("Type your text here:", height=350, placeholder="Start writing...")
     word_count = len(user_text.split())
     st.write(f"**Word count: {word_count}**")
-    
+
+    # Кнопки управления
     col_back, col_sub = st.columns([1, 4])
     with col_back:
-        if st.button("⬅️ Back"): 
+        if st.button("⬅️ Back"):
             st.session_state.page = 'home'
             st.session_state.current_topic = ""
             st.rerun()
             
     with col_sub:
         if st.button("SUBMIT FOR EVALUATION"):
-            if word_count < 10:
-                st.error("Please write a longer text before submitting.")
+            if word_count < 100:
+                st.error("Text too short! Minimum 100 words required for evaluation.")
             else:
-                with st.spinner("The examiner is checking your work..."):
+                with st.spinner("Examiner is reading..."):
+                    # Здесь остается твой промпт, который мы настраивали (C1-C5)
                     prompt = f"""
-                    You are a professional English examiner. Analyze this {st.session_state.drill_type}.
-                    Topic: {st.session_state.current_topic}
+                    Analyze this essay based on the provided sources.
+                    Topic: {topic['title']}
+                    Source 1: {topic['source1']}
+                    Source 2: {topic['source2']}
                     
-                    Evaluate the text strictly based on these 5 criteria (0-5 points each):
-                    1. Task Achievement (Sagatavotība)
-                    2. Coherence and Cohesion (Mijiedarbība)
-                    3. Lexical Resource (Bagātība)
-                    4. Grammatical Range and Accuracy (Gramatika)
-                    5. Fluency (Plūdums)
-
-                    Format your response EXACTLY like this:
+                    Format:
                     C1: [score]
                     C2: [score]
                     C3: [score]
                     C4: [score]
                     C5: [score]
-                    TOTAL: [sum of scores]
-                    FEEDBACK: [Short advice for improvement]
-                    TEXT: [Rewritten text. Use **bold (correction)** for every mistake found. Example: I **goed (went)** to school.]
-
-                    Student's text: {user_text}
-                    """
+                    TOTAL: [sum]
+                    FEEDBACK: [Advice]
+                    TEXT: [Corrected text with **bold (fixes)**]
                     
+                    Student Text: {user_text}
+                    """
+                    # ... (дальше твой код вызова model.generate_content как раньше)
                     try:
                         response_obj = model.generate_content(prompt)
                         resp = response_obj.text
@@ -175,7 +189,6 @@ elif st.session_state.page == 'input':
                             match = re.search(rf'{label}:\s*(\d+)', text)
                             return match.group(1) if match else "0"
 
-                        # Сохраняем все данные для страницы результатов
                         st.session_state.results_data = {
                             'c1': get_val('C1', resp),
                             'c2': get_val('C2', resp),
@@ -183,13 +196,14 @@ elif st.session_state.page == 'input':
                             'c4': get_val('C4', resp),
                             'c5': get_val('C5', resp),
                             'total': get_val('TOTAL', resp),
-                            'feedback': resp.split("FEEDBACK:")[1].split("TEXT:")[0].strip() if "FEEDBACK:" in resp else "Good effort!",
+                            'feedback': resp.split("FEEDBACK:")[1].split("TEXT:")[0].strip() if "FEEDBACK:" in resp else "Done!",
                             'text': resp.split("TEXT:")[1].strip() if "TEXT:" in resp else user_text
                         }
                         st.session_state.page = 'results'
                         st.rerun()
                     except Exception as e:
-                        st.error(f"API Error: {e}")
+                        st.error(f"Error: {e}")
+                            
         
                 
 

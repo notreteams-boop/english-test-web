@@ -159,23 +159,45 @@ elif st.session_state.page == 'input':
 
 # --- PAGE: RESULTS ---
 elif st.session_state.page == 'results':
-    res = st.session_state.results_data
-    max_score = 10 if st.session_state.mode == 'drill' else 25
+    data = st.session_state.results_data
     
     st.markdown(f"""
-        <div class='overall-box'>
-            <p>SCORE FOR {st.session_state.drill_type.upper()}</p>
-            <h2>{res['score']} / {max_score}</h2>
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border: 2px solid #000; border-radius: 10px; margin-bottom: 20px;">
+            <p style="margin:0; font-weight: bold; color: #000;">TOTAL SCORE</p>
+            <h2 style="color: #000; font-size: 36px; margin: 0;">{data.get('total', 0)} / 25</h2>
         </div>
     """, unsafe_allow_html=True)
+
+    # Те самые 5 окошек (критериев)
+    st.markdown(f"""
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px;">
+            <div style="border: 1px solid #000; padding: 10px; text-align: center; border-radius: 5px; background: white;">
+                <small style="color: #666;">Sagatavotība</small><br><b style="font-size: 20px; color: #000;">{data.get('c1')}</b>
+            </div>
+            <div style="border: 1px solid #000; padding: 10px; text-align: center; border-radius: 5px; background: white;">
+                <small style="color: #666;">Mijiedarbība</small><br><b style="font-size: 20px; color: #000;">{data.get('c2')}</b>
+            </div>
+            <div style="border: 1px solid #000; padding: 10px; text-align: center; border-radius: 5px; background: white;">
+                <small style="color: #666;">Bagātība</small><br><b style="font-size: 20px; color: #000;">{data.get('c3')}</b>
+            </div>
+            <div style="border: 1px solid #000; padding: 10px; text-align: center; border-radius: 5px; background: white;">
+                <small style="color: #666;">Gramatika</small><br><b style="font-size: 20px; color: #000;">{data.get('c4')}</b>
+            </div>
+            <div style="border: 1px solid #000; padding: 10px; text-align: center; border-radius: 5px; background: white;">
+                <small style="color: #666;">Plūdums</small><br><b style="font-size: 20px; color: #000;">{data.get('c5')}</b>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if data.get('feedback'):
+        st.subheader("💡 Examiner's Advice")
+        st.info(data['feedback'])
+
+    st.subheader("📝 Revised Text (Corrections)")
+    st.markdown(data.get('text', ''))
     
-    st.subheader("💡 Examiner's Feedback")
-    st.write(res['feedback'])
-    
-    st.subheader("📝 Corrections")
-    st.markdown(res['text'])
-    
-    if st.button("Try Another Exercise"):
+    st.write("---")
+    if st.button("⬅️ TRY ANOTHER EXERCISE"):
         st.session_state.page = 'home'
         st.session_state.current_topic = ""
         st.rerun()

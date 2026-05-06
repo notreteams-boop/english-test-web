@@ -7,18 +7,48 @@ st.set_page_config(page_title="Exam Simulator PRO", page_icon="📝", layout="ce
 
 st.markdown("""
     <style>
+    /* 1. Общий фон страницы */
     .stApp { background-color: #ffffff; }
-    .main .block-container { padding-top: 2rem; max-width: 850px; }
-    h1, h2, h3, p, li { color: #000000 !important; font-family: 'Times New Roman', serif; }
-    .stTextArea textarea { 
-        background-color: #ffffff !important; 
-        border: 1px solid #000000 !important; 
-        font-size: 16px; 
+    
+    /* 2. Настройка ВСЕГО текста на странице, чтобы он был черным */
+    html, body, [data-testid="stWidgetLabel"], .stMarkdown p, h1, h2, h3 {
+        color: #000000 !important;
+        font-family: 'Times New Roman', serif;
     }
+
+    /* 3. ПОЛЕ ВВОДА (Самое важное): принудительно черный шрифт при печати */
+    .stTextArea textarea {
+        color: #000000 !important; /* Цвет букв при печати */
+        -webkit-text-fill-color: #000000 !important; /* Для браузеров Chrome/Safari */
+        background-color: #ffffff !important; /* Фон поля */
+        border: 1px solid #000000 !important;
+        font-family: 'Arial', sans-serif !important;
+        font-size: 16px !important;
+    }
+
+    /* 4. КНОПКИ: Черный фон, Белый текст */
+    div.stButton > button {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border: 1px solid #000000;
+        border-radius: 4px;
+        font-weight: bold;
+        width: 100%;
+    }
+
+    div.stButton > button:hover {
+        background-color: #444444 !important;
+        color: #ffffff !important;
+    }
+
+    /* Исправляем цвет текста внутри выпадающих списков и других виджетов */
+    .stSelectbox div[data-baseweb="select"] > div {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    
     .exam-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
     </style>
-    """, unsafe_allow_html=True)
-
 # --- 2. ПОДКЛЮЧЕНИЕ КЛЮЧА ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])

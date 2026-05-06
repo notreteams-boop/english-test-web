@@ -114,34 +114,37 @@ elif st.session_state.page == 'input':
     topic = st.session_state.current_topic
 
     # Оформление заголовка как на скриншоте
+    # Вывод задания и источников (прижми к левому краю, чтобы не было черного фона!)
     st.markdown(f"""
-        <div style="font-family: 'Times New Roman', serif; color: #000;">
-            <p style="margin-bottom:0;"><b>Task 2</b></p>
-            <p style="margin-bottom:0;"><i>Essay (16 points)</i></p>
-            <p><b>You should spend about 55 minutes on this task.</b></p>
-            <p>You are participating in an international youth newspaper essay competition on <b>{topic['title']}</b>. 
-            Read the information provided and write an essay in which you:</p>
-            <ul>
-                <li>formulate the problem raised in the sources and explain why it should be addressed;</li>
-                <li>propose and support at least two solutions to the problem which address the causes;</li>
-                <li>come to a conclusion.</li>
-            </ul>
-            <p><b>Write between 250–300 words. Texts shorter than 100 words will not be evaluated.</b></p>
-            <p>Do not forget to use “quotation marks” if you decide to quote a phrase from the sources.</p>
-            
-            <p style="margin-top:20px; margin-bottom:5px;"><b>Source 1:</b></p>
-            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
-                {topic['source1']}
-            </div>
+<div style="font-family: 'Times New Roman', serif; color: #000;">
+<p style="margin-bottom:0;"><b>Task 2</b></p>
+<p style="margin-bottom:0;"><i>Essay (16 points)</i></p>
+<p><b>You should spend about 55 minutes on this task.</b></p>
+<p>You are participating in an international youth newspaper essay competition on <b>{topic['title']}</b>. 
+Read the information provided and write an essay in which you:</p>
+<ul style="margin-top: 10px; margin-bottom: 10px;">
+<li>formulate the problem raised in the sources and explain why it should be addressed;</li>
+<li>propose and support at least two solutions to the problem which address the causes;</li>
+<li>come to a conclusion.</li>
+</ul>
+<p><b>Write between 250–300 words. Texts shorter than 100 words will not be evaluated.</b></p>
+<p>Do not forget to use “quotation marks” if you decide to quote a phrase from the sources.</p>
+<div style="margin-top:20px;">
+<p style="margin-bottom:5px;"><b>Source 1:</b></p>
+<div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
+{topic['source1']}
+</div>
+<p style="margin-bottom:5px;"><b>Source 2:</b></p>
+<div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
+{topic['source2']}
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
-            <p style="margin-bottom:5px;"><b>Source 2:</b></p>
-            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px;">
-                {topic['source2']}
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.write("---") # Просто черта для разделения задания и поля ввода
 
-    # Поле для ввода
+    # Поле для ввода (оставляй как было)
     user_text = st.text_area("Write your essay here:", height=400, placeholder="Start typing...")
     
     word_count = len(user_text.split())

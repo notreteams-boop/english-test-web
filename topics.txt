@@ -31,4 +31,4 @@ TASKS_2 = [
         "source1": "Modern urban design often prioritizes cars over pedestrians, making it difficult for residents to walk or cycle safely. As a result, many city dwellers lead a sedentary lifestyle, which is a leading cause of obesity and heart disease.",
         "source2": "A survey conducted in major cities found that 60% of residents feel they lack access to affordable sports facilities or safe green parks. Long working hours and desk-based jobs further contribute to the lack of daily physical movement."
     }
-]
+] # <--- Вот эта скобка была пропущена!

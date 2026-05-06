@@ -22,9 +22,10 @@ st.markdown("""
 # --- 2. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.0-pro')
-except:
-    st.error("API Key Error!")
+    # Самое надежное имя на сегодня
+    model = genai.GenerativeModel('gemini-1.5-flash') 
+except Exception as e:
+    st.error(f"API Configuration Error: {e}")
     st.stop()
 
 # --- 3. SESSION STATE ---

@@ -8,68 +8,73 @@ st.set_page_config(page_title="AI Exam Prep", page_icon="📝")
 API_KEY = "AIzaSyBsETc7a3v_z98gmhDQPgKWo2WWUM7bzFg"
 genai.configure(api_key=API_KEY)
 
-# Используем "умное" имя модели, которое само подстроится под систему
 MODEL_NAME = 'models/gemini-flash-latest'
+model = genai.GenerativeModel(MODEL_NAME)
 
-try:
-    model = genai.GenerativeModel(MODEL_NAME)
-except:
-    # Запасной вариант, если первый не сработал
-    model = genai.GenerativeModel('models/gemini-2.0-flash')
-
-# --- 2. ТЕМЫ ---
-def load_topics():
+# --- 2. ФУНКЦИЯ ГЕНЕРАЦИИ ТЕМЫ ---
+def get_ai_topic():
+    """Запрашивает у ИИ новую тему для сочинения"""
+    prompt = "Придумай одну актуальную тему для экзаменационного сочинения (уровень средней школы, формат VISC). Тема должна быть на русском языке. Напиши только саму тему, без кавычек и лишних слов."
     try:
-        with open("topics.txt", "r", encoding="utf-8") as f:
-            return [line.strip() for line in f.readlines() if line.strip()]
+        response = model.generate_content(prompt)
+        return response.text.strip()
     except:
-        return ["Education", "Technology", "Environment"]
+        return "Влияние искусственного интеллекта на выбор профессии"
 
-topics = load_topics()
+# --- 3. ЛОГИКА СОСТОЯНИЯ ---
+# Если темы еще нет в памяти — генерируем её
+if 'current_topic' not in st.session_state:
+    with st.spinner('ИИ придумывает тему...'):
+        st.session_state.current_topic = get_ai_topic()
 
-# --- 3. ИНТЕРФЕЙС ---
-st.title("🚀 Проверка сочинений")
+def refresh_topic():
+    with st.spinner('Генерирую новую тему...'):
+        st.session_state.current_topic = get_ai_topic()
 
-selected_topic = st.selectbox("Выбери тему:", topics)
-user_text = st.text_area("Вставь текст сочинения:", height=250)
+# --- 4. ИНТЕРФЕЙС ---
+st.title("🚀 Экзаменатор на базе ИИ")
 
-if st.button("Проверить ✅"):
+st.markdown("### Твоя случайная тема:")
+st.info(f"**{st.session_state.current_topic}**")
+
+# Кнопка смены темы
+if st.button("🔄 Хочу другую тему"):
+    refresh_topic()
+    st.rerun()
+
+st.divider()
+
+user_text = st.text_area("Вставь свое сочинение здесь:", height=250, placeholder="Начни писать...")
+
+if st.button("Проверить работу ✅"):
     if user_text:
-        with st.spinner('Связываюсь с ИИ...'):
+        with st.spinner('Экзаменатор изучает текст...'):
             try:
-                # --- НОВЫЙ ЖЕСТКИЙ ПРОМПТ ---
-                prompt = f"""
-                Ты — официальный экзаменатор. Твоя задача — оценить текст строго по критериям VISC (латвийский госстандарт).
-                Тема: "{selected_topic}"
-                Текст ученика: "{user_text}"
+                # Промпт для проверки
+                check_prompt = f"""
+                Ты — официальный экзаменатор. Оцени текст строго по критериям VISC.
+                Тема: "{st.session_state.current_topic}"
+                Текст: "{user_text}"
 
-                Оценивай по следующим критериям с картинки:
-                1. Uzdevuma izpilde (Sagatavotā runa) — до 5 пунктов.
-                2. Mijiedarbība (Atbildes uz jautājumiem) — до 5 пунктов.
-                3. Valodas bagātība (Leksika/Diapazons) — до 5 пунктов.
-                4. Valodas līdzekļu lietojuma pareizība (Gramatika) — до 5 пунктов.
-                5. Valodas plūdums un izruna — до 5 пунктов.
+                Критерии (по 5 баллов каждый):
+                1. Uzdevuma izpilde
+                2. Mijiedarbība
+                3. Valodas bagātība
+                4. Valodas līdzekļu pareizība
+                5. Valodas plūdums
 
-                ФОРМАТ ОТВЕТА (строго):
-                Напиши только название критерия, количество баллов и краткую причину (почему не максимум). 
-                Без приветствий и лишних слов.
-
-                Пример:
-                - Sagatavotā runa: 3/5. Причина: Использовано мало аргументов из источников.
-                - Valodas bagātība: 2/5. Причина: Ограниченный словарный запас, много повторов.
-                И так далее по всем пунктам. В конце — ИТОГ (сумма баллов).
-                Отвечай на русском языке.
+                ФОРМАТ ОТВЕТА:
+                Название критерия: балл/5. Причина.
+                В конце — ИТОГ (сумма баллов).
+                Отвечай на русском.
                 """
                 
-                response = model.generate_content(prompt)
-                st.success("Готово!")
-                st.write(response.text)
+                response = model.generate_content(check_prompt)
+                st.success("Проверка завершена!")
+                st.markdown("---")
+                st.markdown(response.text)
                 
             except Exception as e:
-                # Если опять лимит (429) или 404, выводим понятное сообщение
-                if "429" in str(e):
-                    st.warning("Google занят. Подожди ровно 1 минуту и нажми кнопку еще раз.")
-                else:
-                    st.error(f"Техническая заминка: {e}")
+                st.error(f"Произошла ошибка: {e}")
     else:
-        st.info("Напиши что-нибудь в поле выше!")
+        st.warning("Поле пустое! Вставь текст сочинения.")

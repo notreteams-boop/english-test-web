@@ -22,10 +22,30 @@ st.markdown("""
 # --- 2. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Самое надежное имя на сегодня
-    model = genai.GenerativeModel('gemini-1.5-flash') 
+    
+    # Пытаемся найти любую доступную модель flash или pro
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    
+    # Приоритетный список имен
+    target_models = [
+        'models/gemini-1.5-flash', 
+        'models/gemini-1.5-flash-latest', 
+        'models/gemini-pro'
+    ]
+    
+    selected_model = None
+    for target in target_models:
+        if target in available_models:
+            selected_model = target
+            break
+            
+    if not selected_model:
+        # Если ничего из списка не нашли, берем первую доступную
+        selected_model = available_models[0]
+        
+    model = genai.GenerativeModel(selected_model)
 except Exception as e:
-    st.error(f"API Configuration Error: {e}")
+    st.error(f"API Error: {e}")
     st.stop()
 
 # --- 3. SESSION STATE ---

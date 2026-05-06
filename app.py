@@ -103,14 +103,20 @@ if st.session_state.page == 'home':
             st.rerun()
 
 # --- PAGE: INPUT ---
+# --- PAGE: INPUT ---
 elif st.session_state.page == 'input':
     if not st.session_state.current_topic: 
         st.session_state.current_topic = get_topic()
 
-    st.markdown(f"<span class='drill-label'>{st.session_state.drill_type.upper()} MODE</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='background-color: #000; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px;'>{st.session_state.drill_type.upper()} MODE</span>", unsafe_allow_html=True)
+    
+    if st.button("New Topic 🎲"):
+        st.session_state.current_topic = get_topic()
+        st.rerun()
+
     st.subheader(f"Topic: {st.session_state.current_topic}")
     
-    # Инструкции в зависимости от режима
+    # Инструкции в зависимости от выбранного режима
     instructions = {
         "Introduction": "Write only the introduction. Paraphrase the topic and clearly state the problem.",
         "Solutions": "Write the body paragraphs. Propose 2 solutions with examples and consequences.",
@@ -120,7 +126,9 @@ elif st.session_state.page == 'input':
     }
     st.info(instructions.get(st.session_state.drill_type, ""))
 
-    user_text = st.text_area("Type your text:", height=300)
+    user_text = st.text_area("Type your text here:", height=350, placeholder="Start writing...")
+    word_count = len(user_text.split())
+    st.write(f"**Word count: {word_count}**")
     
     col_back, col_sub = st.columns([1, 4])
     with col_back:
@@ -128,34 +136,62 @@ elif st.session_state.page == 'input':
             st.session_state.page = 'home'
             st.session_state.current_topic = ""
             st.rerun()
+            
     with col_sub:
-        if st.button("SUBMIT FOR FEEDBACK"):
-            with st.spinner("Analyzing..."):
-                # Специальный промпт для секций
-                prompt = f"""
-                Act as an IELTS/VISC examiner. Analyze this {st.session_state.drill_type} for the topic: {st.session_state.current_topic}.
+        if st.button("SUBMIT FOR EVALUATION"):
+            if word_count < 10:
+                st.error("Please write a longer text before submitting.")
+            else:
+                with st.spinner("The examiner is checking your work..."):
+                    prompt = f"""
+                    You are a professional English examiner. Analyze this {st.session_state.drill_type}.
+                    Topic: {st.session_state.current_topic}
+                    
+                    Evaluate the text strictly based on these 5 criteria (0-5 points each):
+                    1. Task Achievement (Sagatavotība)
+                    2. Coherence and Cohesion (Mijiedarbība)
+                    3. Lexical Resource (Bagātība)
+                    4. Grammatical Range and Accuracy (Gramatika)
+                    5. Fluency (Plūdums)
+
+                    Format your response EXACTLY like this:
+                    C1: [score]
+                    C2: [score]
+                    C3: [score]
+                    C4: [score]
+                    C5: [score]
+                    TOTAL: [sum of scores]
+                    FEEDBACK: [Short advice for improvement]
+                    TEXT: [Rewritten text. Use **bold (correction)** for every mistake found. Example: I **goed (went)** to school.]
+
+                    Student's text: {user_text}
+                    """
+                    
+                    try:
+                        response_obj = model.generate_content(prompt)
+                        resp = response_obj.text
+                        
+                        def get_val(label, text):
+                            match = re.search(rf'{label}:\s*(\d+)', text)
+                            return match.group(1) if match else "0"
+
+                        # Сохраняем все данные для страницы результатов
+                        st.session_state.results_data = {
+                            'c1': get_val('C1', resp),
+                            'c2': get_val('C2', resp),
+                            'c3': get_val('C3', resp),
+                            'c4': get_val('C4', resp),
+                            'c5': get_val('C5', resp),
+                            'total': get_val('TOTAL', resp),
+                            'feedback': resp.split("FEEDBACK:")[1].split("TEXT:")[0].strip() if "FEEDBACK:" in resp else "Good effort!",
+                            'text': resp.split("TEXT:")[1].strip() if "TEXT:" in resp else user_text
+                        }
+                        st.session_state.page = 'results'
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"API Error: {e}")
+        
                 
-                Format:
-                SCORE: [0-10 for drills, 0-25 for full tasks]
-                FEEDBACK: [Specific advice on how to improve this specific section]
-                TEXT: [Corrected text with **bold (fixes)**]
-                
-                Student text: {user_text}
-                """
-                resp = model.generate_content(prompt).text
-                
-                # Парсинг (упрощенный для гибкости)
-                score = re.search(r"SCORE:\s*(\d+)", resp)
-                feedback = re.search(r"FEEDBACK:(.*?)TEXT:", resp, re.DOTALL)
-                text_corr = resp.split("TEXT:")[1] if "TEXT:" in resp else "Error parsing"
-                
-                st.session_state.results_data = {
-                    "score": score.group(1) if score else "N/A",
-                    "feedback": feedback.group(1).strip() if feedback else "Keep practicing!",
-                    "text": text_corr.strip()
-                }
-                st.session_state.page = 'results'
-                st.rerun()
 
 # --- PAGE: RESULTS ---
 elif st.session_state.page == 'results':

@@ -131,43 +131,60 @@ else:
         st.rerun()
     
     st.subheader(f"Topic: {st.session_state.current_topic}")
-    user_text = st.text_area("Write your essay here:", height=350)
+    
+    # Поле ввода
+    user_text = st.text_area("Write your essay here:", height=350, placeholder="Start typing your essay...")
+    
+    # Счётчик слов
+    word_count = len(user_text.split())
+    st.write(f"Word count: {word_count}")
     
     if st.button("SUBMIT FOR EVALUATION"):
-        if len(user_text.split()) < 100:
-            st.error("Text too short!")
+        if word_count < 100:
+            st.error(f"Text too short! You have only {word_count} words. Minimum is 100.")
         else:
-            with st.spinner('Examiner is marking...'):
-                # Строжайший промпт для получения только данных
+            with st.spinner('Examiner is marking your work...'):
                 prompt = f"""
                 Analyze this essay on "{st.session_state.current_topic}": "{user_text}"
                 
-                Strictly follow this format:
+                You must provide exactly this labels and nothing else:
                 SCORE_C1: [0-5]
                 SCORE_C2: [0-5]
                 SCORE_C3: [0-5]
                 SCORE_C4: [0-5]
                 SCORE_C5: [0-5]
                 TOTAL: [sum]
-                TEXT: [The student's text, but highlight errors in bold and brackets, e.g., "**error (correction)**"]
-                
-                Nothing else. No comments, no "Here is your result".
+                TEXT: [The student's text, highlight errors in bold and brackets: **error (correction)**]
                 """
-                response = model.generate_content(prompt).text
                 
-                # Парсинг ответа
                 try:
-                    res = {}
-                    res['c1'] = re.search(r'SCORE_C1: (\d)', response).group(1)
-                    res['c2'] = re.search(r'SCORE_C2: (\d)', response).group(1)
-                    res['c3'] = re.search(r'SCORE_C3: (\d)', response).group(1)
-                    res['c4'] = re.search(r'SCORE_C4: (\d)', response).group(1)
-                    res['c5'] = re.search(r'SCORE_C5: (\d)', response).group(1)
-                    res['total'] = re.search(r'TOTAL: (\d+)', response).group(1)
-                    res['text'] = response.split("TEXT:")[1].strip()
+                    response_text = model.generate_content(prompt).text
                     
+                    # Вспомогательная функция для поиска цифр
+                    def extract_score(label, text):
+                        match = re.search(rf'{label}:\s*(\d+)', text)
+                        return match.group(1) if match else "0"
+
+                    # Собираем данные
+                    res = {}
+                    res['c1'] = extract_score('SCORE_C1', response_text)
+                    res['c2'] = extract_score('SCORE_C2', response_text)
+                    res['c3'] = extract_score('SCORE_C3', response_text)
+                    res['c4'] = extract_score('SCORE_C4', response_text)
+                    res['c5'] = extract_score('SCORE_C5', response_text)
+                    res['total'] = extract_score('TOTAL', response_text)
+                    
+                    # Извлекаем исправленный текст
+                    if "TEXT:" in response_text:
+                        res['text'] = response_text.split("TEXT:")[1].strip()
+                    else:
+                        res['text'] = user_text  # Запасной вариант
+
+                    # Сохраняем и переключаем страницу
                     st.session_state.results_data = res
                     st.session_state.page = 'results'
                     st.rerun()
-                except:
-                    st.error("Failed to parse evaluation. Try again.")
+                    
+                except Exception as e:
+                    st.error(f"Error during evaluation: {e}")
+                    st.info("Please try clicking Submit again.")

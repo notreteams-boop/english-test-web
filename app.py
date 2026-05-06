@@ -22,7 +22,7 @@ st.markdown("""
 # --- 2. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 except:
     st.error("API Key Error!")
     st.stop()

@@ -119,7 +119,7 @@ if st.button("SUBMIT FOR EVALUATION"):
                 st.markdown("---")
                 st.markdown(response.text)
             except Exception as e:
-                st.error(f"Error: {e}")    }
+                st.error(f"Error: {e}")    
 
     div.stButton > button:hover {
         background-color: #444444 !important;

@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import random
 import re
+from google.generativeai.types import RequestOptions
 
 # --- 1. CONFIG & STYLES ---
 st.set_page_config(page_title="English Exam Coach", page_icon="🎓", layout="centered")
@@ -188,7 +189,9 @@ elif st.session_state.page == 'reading_results':
         st.session_state.page = 'home'
         st.rerun()
 
+# --- PAGE: INPUT ---
 elif st.session_state.page == 'input':
+    # 1. Выбор темы
     if not st.session_state.current_topic:
         from topics import TASKS_2
         st.session_state.current_topic = random.choice(TASKS_2)
@@ -196,54 +199,35 @@ elif st.session_state.page == 'input':
 
     st.title(f"✍️ Practice: {st.session_state.drill_type}")
     
-    # Отображение задания
-    if "Task 2" in st.session_state.drill_type:
-        st.markdown(f"""
-        <div style="border: 2px solid #000; padding: 20px; font-family: 'Times New Roman'; color: #000; background: #fff;">
-            <h3 style="margin-top:0;">Task 2: Essay</h3>
-            <p>Topic: <b>{topic['title']}</b></p>
-            <p><b>Source 1:</b> {topic['source1']}</p>
-            <p><b>Source 2:</b> {topic['source2']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("Task 1: Write an informal email (120-150 words).")
-
+    # 2. Поле ввода текста
     user_text = st.text_area("Your text:", height=350)
     word_count = len(user_text.split())
     st.write(f"Words: {word_count}")
 
+    # 3. КНОПКА ПРОВЕРКИ (ТОТ САМЫЙ ШАГ 2)
     if st.button("SUBMIT FOR EVALUATION", use_container_width=True):
         if word_count < 100:
             st.error("Text too short!")
         else:
-            # 1. Сначала создаем промпт (прижат к левому краю внутри else)
-            prompt = f"""
-            You are an English Exam Examiner. Grade this {st.session_state.drill_type}.
-            Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Email'}
-            Text: {user_text}
-            
-            Return ONLY JSON:
-            {{
-              "c1": 0-5, "c2": 0-5, "c3": 0-5, "c4": 0-5, "c5": 0-5,
-              "total": 25,
-              "feedback": "string",
-              "strengths": ["list"],
-              "improvements": ["list"],
-              "corrected": "string"
-            }}
-            """
+            # Создаем инструкции (промпт)
+            prompt = f"Grade this English text: {user_text}" 
 
-            # 2. Блок spinner
-            with st.spinner("Connecting to AI..."):
-                # ВСЁ ЧТО НИЖЕ — С ОТСТУПОМ ВПРАВО (4 ПРОБЕЛА)
+            with st.spinner("Connecting to AI (Stable V1)..."):
                 response_text = None
                 errors = []
                 
                 for model_name in AVAILABLE_MODELS:
                     try:
+                        # Создаем модель
                         model_instance = genai.GenerativeModel(model_name)
-                        res = model_instance.generate_content(prompt)
+                        
+                        # ПРИНУДИТЕЛЬНО указываем версию API v1 для Латвии
+                        from google.generativeai.types import RequestOptions
+                        res = model_instance.generate_content(
+                            prompt,
+                            request_options=RequestOptions(api_version='v1')
+                        )
+                        
                         if res and res.text:
                             response_text = res.text
                             break
@@ -251,22 +235,19 @@ elif st.session_state.page == 'input':
                         errors.append(f"{model_name}: {str(e)}")
                         continue 
 
-                # 3. Обработка ответа (тоже внутри spinner или сразу после, но с отступом else)
+                # Если получили ответ от ИИ
                 if response_text:
                     try:
-                        clean_content = response_text.replace('```json', '').replace('```', '').strip()
-                        start = clean_content.find('{')
-                        end = clean_content.rfind('}') + 1
-                        json_str = clean_content[start:end]
-                        
                         import json
-                        st.session_state.results_data = json.loads(json_str)
+                        # Очистка и сохранение
+                        clean_content = response_text.replace('```json', '').replace('```', '').strip()
+                        st.session_state.results_data = json.loads(clean_content)
                         st.session_state.page = 'results'
                         st.rerun()
-                    except Exception as parse_err:
-                        st.error(f"AI format error: {parse_err}")
+                    except:
+                        st.error("AI responded but format is bad. Try again.")
                 else:
-                    st.error("All models failed.")
+                    st.error("All models failed. Errors:")
                     for err in errors:
                         st.write(f"❌ {err}")
 # PAGE: RESULTS

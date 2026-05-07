@@ -83,11 +83,11 @@ try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     # Расширенный список для Европы
     AVAILABLE_MODELS = [
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-001",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-pro",
-        "gemini-pro"
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-1.0-pro",
+    "models/gemini-1.5-flash",
+    "models/gemini-1.5-pro"
     ]
 except Exception as e:
     st.error(f"API Configuration Error: {e}")

@@ -217,7 +217,7 @@ elif st.session_state.page == 'input':
         if word_count < 100:
             st.error("Text too short!")
         else:
-            # СНАЧАЛА СОЗДАЕМ ТЕКСТ ЗАПРОСА
+            # 1. Сначала создаем промпт (прижат к левому краю внутри else)
             prompt = f"""
             You are an English Exam Examiner. Grade this {st.session_state.drill_type}.
             Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Email'}
@@ -234,33 +234,26 @@ elif st.session_state.page == 'input':
             }}
             """
 
+            # 2. Блок spinner
             with st.spinner("Connecting to AI..."):
-                response_text = None
-                errors = []
-                
-                # ТЕПЕРЬ ЦИКЛ СРАБОТАЕТ, ТАК КАК prompt УЖЕ СУЩЕСТВУЕТ
-                with st.spinner("Connecting to AI..."):
+                # ВСЁ ЧТО НИЖЕ — С ОТСТУПОМ ВПРАВО (4 ПРОБЕЛА)
                 response_text = None
                 errors = []
                 
                 for model_name in AVAILABLE_MODELS:
                     try:
-                        # Указываем модель БЕЗ дополнительных параметров, 
-                        # чтобы библиотека сама выбрала стабильный API v1
                         model_instance = genai.GenerativeModel(model_name)
-                        
                         res = model_instance.generate_content(prompt)
-                        
                         if res and res.text:
                             response_text = res.text
                             break
                     except Exception as e:
                         errors.append(f"{model_name}: {str(e)}")
-                        continue
-                # ... дальше идет код обработки ответа (if response_text:) ...
+                        continue 
+
+                # 3. Обработка ответа (тоже внутри spinner или сразу после, но с отступом else)
                 if response_text:
                     try:
-                        # Улучшенная очистка JSON
                         clean_content = response_text.replace('```json', '').replace('```', '').strip()
                         start = clean_content.find('{')
                         end = clean_content.rfind('}') + 1
@@ -271,14 +264,11 @@ elif st.session_state.page == 'input':
                         st.session_state.page = 'results'
                         st.rerun()
                     except Exception as parse_err:
-                        st.error(f"AI response format error. Text: {response_text[:100]}")
+                        st.error(f"AI format error: {parse_err}")
                 else:
-                    st.error("🚨 All models failed to respond.")
+                    st.error("All models failed.")
                     for err in errors:
                         st.write(f"❌ {err}")
-                    st.info("Check if 'Generative Language API' is enabled in your Google Cloud Console.")
-
-
 # PAGE: RESULTS
 elif st.session_state.page == 'results':
     st.title("Results")

@@ -239,20 +239,24 @@ elif st.session_state.page == 'input':
                 errors = []
                 
                 # ТЕПЕРЬ ЦИКЛ СРАБОТАЕТ, ТАК КАК prompt УЖЕ СУЩЕСТВУЕТ
+                with st.spinner("Connecting to AI..."):
+                response_text = None
+                errors = []
+                
                 for model_name in AVAILABLE_MODELS:
                     try:
-                        temp_model = genai.GenerativeModel(model_name=model_name)
-                        res = temp_model.generate_content(
-                            prompt,
-                            generation_config=genai.types.GenerationConfig(temperature=0.7)
-                        )
+                        # Указываем модель БЕЗ дополнительных параметров, 
+                        # чтобы библиотека сама выбрала стабильный API v1
+                        model_instance = genai.GenerativeModel(model_name)
+                        
+                        res = model_instance.generate_content(prompt)
+                        
                         if res and res.text:
                             response_text = res.text
                             break
                     except Exception as e:
                         errors.append(f"{model_name}: {str(e)}")
-                        continue 
-
+                        continue
                 # ... дальше идет код обработки ответа (if response_text:) ...
                 if response_text:
                     try:

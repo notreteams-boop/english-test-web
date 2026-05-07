@@ -217,46 +217,50 @@ elif st.session_state.page == 'input':
         if word_count < 100:
             st.error("Text too short!")
         else:
-            with st.spinner("Searching for working AI model and evaluating..."):
-                prompt = f"""
-                You are an English Exam Examiner. Grade this {st.session_state.drill_type}.
-                Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Email'}
-                Text: {user_text}
-                
-                Return ONLY JSON:
-                {{
-                  "c1": 0-5, "c2": 0-5, "c3": 0-5, "c4": 0-5, "c5": 0-5,
-                  "total": sum,
-                  "feedback": "string",
-                  "strengths": ["list"],
-                  "improvements": ["list"],
-                  "corrected": "string"
-                }}
-                """
-                
+            with st.spinner("Connecting to AI..."):
                 response_text = None
-                # ЦИКЛ ПОДБОРА МОДЕЛИ
+                errors = []
+                
                 for model_name in AVAILABLE_MODELS:
                     try:
-                        temp_model = genai.GenerativeModel(model_name)
-                        res = temp_model.generate_content(prompt)
-                        response_text = res.text
-                        if response_text:
-                            break # Если получили ответ, выходим из цикла
-                    except Exception as model_err:
-                        continue # Если ошибка 404 или другая, пробуем следующую модель
+                        # Принудительно создаем объект модели
+                        temp_model = genai.GenerativeModel(model_name=model_name)
+                        
+                        # Вызываем генерацию
+                        res = temp_model.generate_content(
+                            prompt,
+                            generation_config=genai.types.GenerationConfig(
+                                temperature=0.7,
+                            )
+                        )
+                        
+                        if res and res.text:
+                            response_text = res.text
+                            break
+                    except Exception as e:
+                        errors.append(f"{model_name}: {str(e)}")
+                        continue 
                 
+                # ОБРАБОТКА РЕЗУЛЬТАТА (ТОЛЬКО ОДИН РАЗ)
                 if response_text:
                     try:
-                        # Чистим ответ от лишнего мусора
-                        clean_json = re.search(r'\{.*\}', response_text, re.DOTALL).group()
-                        st.session_state.results_data = eval(clean_json)
+                        # Улучшенная очистка JSON
+                        clean_content = response_text.replace('```json', '').replace('```', '').strip()
+                        start = clean_content.find('{')
+                        end = clean_content.rfind('}') + 1
+                        json_str = clean_content[start:end]
+                        
+                        import json
+                        st.session_state.results_data = json.loads(json_str)
                         st.session_state.page = 'results'
                         st.rerun()
-                    except:
-                        st.error("AI returned wrong format. Please try again.")
+                    except Exception as parse_err:
+                        st.error(f"AI response format error. Text: {response_text[:100]}")
                 else:
-                    st.error("All AI models are currently unavailable (404/500). Check your API Key or Region.")
+                    st.error("🚨 All models failed to respond.")
+                    for err in errors:
+                        st.write(f"❌ {err}")
+                    st.info("Check if 'Generative Language API' is enabled in your Google Cloud Console.")
 
 
 # PAGE: RESULTS

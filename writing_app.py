@@ -6,37 +6,6 @@ import re
 # --- 1. CONFIG & STYLES (Исправлено для стабильности фона) ---
 # st.set_page_config удален, так как он теперь в главном файле app.py
 
-st.markdown("""
-<style>
-    /* Принудительный белый фон для раздела Writing */
-    .stApp { background-color: #ffffff !important; }
-    
-    /* Принудительный черный текст */
-    h1, h2, h3, p, li, span, label, div, .stMarkdown { 
-        color: #000000 !important; 
-        font-family: 'Times New Roman', serif !important; 
-    }
-    
-    .overall-box { background-color: #f8f9fa; padding: 20px; text-align: center; border: 2px solid #000; border-radius: 10px; margin-bottom: 20px; }
-    .overall-box h2 { color: #000 !important; font-size: 36px; margin: 0; }
-    .announcement-box { border: 2px solid #000; padding: 15px; margin: 15px 0; background-color: #fff; }
-    
-    /* Кнопки в стиле экзамена */
-    div.stButton > button { 
-        background-color: #fff !important; 
-        color: #000 !important; 
-        border: 1px solid #000 !important; 
-        font-weight: bold; 
-        width: 100%; 
-        transition: 0.3s; 
-    }
-    div.stButton > button:hover { 
-        background-color: #000 !important; 
-        color: #fff !important; 
-    }
-    .drill-label { background-color: #000; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-bottom: 10px; display: inline-block; }
-</style>
-""", unsafe_allow_html=True)
 
 # --- 2. API SETUP ---
 try:

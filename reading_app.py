@@ -1,21 +1,55 @@
 import streamlit as st
 import random
 
-# --- 1. СТИЛИ (Дизайн под экзаменационный лист) ---
+# --- 1. СТИЛИ (Исправленный блок для стабильного фона) ---
 st.markdown("""
 <style>
-    .stApp { background-color: #ffffff; }
-    h1, h2, h3, p, li, span, label, div { color: #000000 !important; font-family: 'Times New Roman', serif; }
-    .exam-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    .exam-table th, .exam-table td { border: 1px solid black; padding: 10px; text-align: left; }
-    .source-box { border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 20px; background-color: #fcfcfc; padding-top: 5px; padding-bottom: 5px; }
+    /* Жестко фиксируем белый фон для всего приложения */
+    .stApp { 
+        background-color: #ffffff !important; 
+    }
+    
+    /* Фиксируем черный цвет текста для всех элементов */
+    h1, h2, h3, p, li, span, label, div, .stMarkdown { 
+        color: #000000 !important; 
+        font-family: 'Times New Roman', serif !important; 
+    }
+
+    /* Таблица и рамки */
+    .exam-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid black; }
+    .exam-table th, .exam-table td { border: 1px solid black; padding: 10px; text-align: left; color: black !important; }
+    
+    .source-box { 
+        border-left: 3px solid #000; 
+        padding-left: 15px; 
+        font-style: italic; 
+        margin-bottom: 20px; 
+        background-color: #fcfcfc !important; 
+        color: #000 !important;
+    }
+
+    /* Цвета ответов */
     .correct { color: #2e7d32 !important; font-weight: bold; }
     .wrong { color: #d32f2f !important; font-weight: bold; }
-    .explanation { background-color: #f0f2f6; padding: 15px; border-radius: 5px; border-left: 5px solid #000; margin-top: 10px; font-size: 15px; color: #000 !important; }
+    .explanation { 
+        background-color: #f0f2f6 !important; 
+        padding: 15px; 
+        border-radius: 5px; 
+        border-left: 5px solid #000; 
+        margin-top: 10px; 
+        font-size: 15px; 
+        color: #000 !important; 
+    }
+
+    /* Настройка выпадающих списков (чтобы были видны на белом) */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: #fff !important;
+        border: 1px solid #000 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. ДАННЫЕ ЗАДАНИЙ (Все 3 варианта) ---
+# --- 2. ДАННЫЕ ЗАДАНИЙ (Без изменений) ---
 TASKS = [
     {
         "id": 1,
@@ -39,13 +73,13 @@ TASKS = [
         },
         "answers": ["A", "C", "E", "D", "B", "B", "A"],
         "explanations": [
-            "Mark mentions he had never worked with animals before and gained new skills at a rescue centre. [cite: 12, 35]",
-            "Elena explains how her job helped her overcome her shyness and fear of interacting with people. [cite: 21, 23, 36]",
-            "Julian mentions he missed academic work and entered his degree with a clearer vision. [cite: 32, 34, 37]",
-            "Tom warns that without a plan or schedule, you can feel like you’ve achieved nothing. [cite: 27, 29, 38]",
-            "Sarah says she worked two jobs in a bakery and call centre to afford her trip. [cite: 15, 39]",
-            "Sarah discovered she had a natural gift for digital marketing through her travel vlog. [cite: 17, 40]",
-            "Mark felt like a 'failure' while watching his friends start their university life. [cite: 10, 41]"
+            "Mark mentions he had never worked with animals before and gained new skills at a rescue centre.",
+            "Elena explains how her job helped her overcome her shyness and fear of interacting with people.",
+            "Julian mentions he missed academic work and entered his degree with a clearer vision.",
+            "Tom warns that without a plan or schedule, you can feel like you’ve achieved nothing.",
+            "Sarah says she worked two jobs in a bakery and call centre to afford her trip.",
+            "Sarah discovered she had a natural gift for digital marketing through her travel vlog.",
+            "Mark felt like a 'failure' while watching his friends start their university life."
         ]
     },
     {
@@ -70,13 +104,13 @@ TASKS = [
         },
         "answers": ["C", "D", "B", "D", "E", "A", "A"],
         "explanations": [
-            "Maya realized she only chose medicine to please her parents, not because she wanted it. [cite: 62, 77]",
-            "Liam says he felt like a 'loser' when he saw his friends moving to university. [cite: 67, 78]",
-            "Kevin's hard physical work on a construction site made him dream of being in a library/studying. [cite: 59, 79]",
-            "Liam started repairing bikes in his garage and selling them for a profit. [cite: 68, 80]",
-            "Rachel explains how she learned to save money and budget while traveling. [cite: 75, 81]",
-            "Sophie felt she wasn't ready for the independence of university and needed time to 'grow up'. [cite: 52, 82]",
-            "Sophie mentions that her fluency in French improved significantly during her time as an au pair. [cite: 53, 83]"
+            "Maya realized she only chose medicine to please her parents, not because she wanted it.",
+            "Liam says he felt like a 'loser' when he saw his friends moving to university.",
+            "Kevin's hard physical work on a construction site made him dream of being in a library/studying.",
+            "Liam started repairing bikes in his garage and selling them for a profit.",
+            "Rachel explains how she learned to save money and budget while traveling.",
+            "Sophie felt she wasn't ready for the independence of university and needed time to 'grow up'.",
+            "Sophie mentions that her fluency in French improved significantly during her time as an au pair."
         ]
     },
     {
@@ -101,18 +135,18 @@ TASKS = [
         },
         "answers": ["E", "C", "A", "B", "A", "D", "E"],
         "explanations": [
-            "Oliver realized that his only real problem was his own self-doubt. [cite: 118, 120]",
-            "Jessica wanted to be an attorney but decided to become a teacher after working in a school. [cite: 105, 121]",
-            "Chloe believes her waitress job taught her more than any internship could. [cite: 96, 122]",
-            "Sam admits he had 'a bit of an ego' and needed a humbling experience. [cite: 98, 123]",
-            "Chloe's Milan internship was cancelled right before she was supposed to leave. [cite: 94, 124]",
-            "Daniel recorded music in his basement and it became his main focus. [cite: 111, 125]",
-            "Oliver handled all problems solo without calling his parents for help. [cite: 117]"
+            "Oliver realized that his only real problem was his own self-doubt.",
+            "Jessica wanted to be an attorney but decided to become a teacher after working in a school.",
+            "Chloe believes her waitress job taught her more than any internship could.",
+            "Sam admits he had 'a bit of an ego' and needed a humbling experience.",
+            "Chloe's Milan internship was cancelled right before she was supposed to leave.",
+            "Daniel recorded music in his basement and it became his main focus.",
+            "Oliver handled all problems solo without calling his parents for help."
         ]
     }
 ]
 
-# --- 3. SESSION STATE (Логика памяти) ---
+# --- 3. SESSION STATE ---
 if 'reading_state' not in st.session_state: 
     st.session_state.reading_state = 'quiz'
 
@@ -126,16 +160,15 @@ task = st.session_state.current_task
 
 # --- 4. ЭКРАН ТЕСТА ---
 if st.session_state.reading_state == 'quiz':
-    st.markdown("<h1 style='text-align: center;'>READING PRACTICE</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: black;'>READING PRACTICE</h1>", unsafe_allow_html=True)
     st.write(f"### {task['title']}")
     st.write(f"*{task['instruction']}*")
 
-    # Сетка для вопросов и ответов (имитация таблицы)
     st.markdown("""
         <table class="exam-table">
             <tr style="background-color: #eee;">
-                <th style="width: 85%;">Questions</th>
-                <th style="width: 15%; text-align: center;">Text</th>
+                <th style="width: 85%; color: black;">Questions</th>
+                <th style="width: 15%; text-align: center; color: black;">Text</th>
             </tr>
         </table>
     """, unsafe_allow_html=True)
@@ -163,7 +196,7 @@ if st.session_state.reading_state == 'quiz':
 
 # --- 5. ЭКРАН РЕЗУЛЬТАТОВ ---
 elif st.session_state.reading_state == 'results':
-    st.markdown("<h1 style='text-align: center;'>EXAMINATION RESULTS</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: black;'>EXAMINATION RESULTS</h1>", unsafe_allow_html=True)
     
     score = sum(1 for i in range(7) if st.session_state.user_answers[i] == task['answers'][i])
     
@@ -184,13 +217,12 @@ elif st.session_state.reading_state == 'results':
             if is_correct:
                 st.markdown(f"Result: <span class='correct'>Correct!</span>", unsafe_allow_html=True)
             else:
-                st.markdown(f"Result: <span class='wrong'>Wrong. The correct answer was **{c_ans}**.</span>", unsafe_allow_html=True)
+                st.markdown(f"Result: <span class='wrong'>Wrong. Correct answer: {c_ans}</span>", unsafe_allow_html=True)
             
             st.markdown(f"<div class='explanation'><b>Explanation:</b> {task['explanations'][i]}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
     if st.button("🔄 TRY ANOTHER TASK", use_container_width=True):
-        # Сброс и выбор новой задачи
         st.session_state.reading_state = 'quiz'
         st.session_state.user_answers = [""] * 7
         st.session_state.current_task = random.choice(TASKS)

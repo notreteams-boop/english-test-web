@@ -1,122 +1,122 @@
 import streamlit as st
 import google.generativeai as genai
 import random
-import re
 
-# --- 1. API SETUP (Ваш блок) ---
+# --- 1. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-flash-latest', 'models/gemini-pro']
-    selected_model = next((t for t in target_models if t in available_models), available_models[0] if available_models else None)
-    model = genai.GenerativeModel(selected_model)
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error(f"API Error: {e}")
     st.stop()
 
-# --- 2. ДАННЫЕ (Важно: проверяем наличие тем) ---
-# Если файла topics.py нет, создаем базовые темы прямо здесь, чтобы не было TypeError
-try:
-    from topics import TASKS_2
-except ImportError:
-    TASKS_2 = [{"title": "Environment", "source1": "Text about pollution...", "source2": "Text about recycling..."}]
-
-TASKS_1_EMAIL = [
-    {"title": "Formal Inquiry", "prompt": "Write an email to a university admissions office asking about the requirements for the English program."},
-    {"title": "Informal Invitation", "prompt": "Write an email to a friend inviting them to spend a gap year traveling with you."}
-]
+# --- 2. СТИЛИЗАЦИЯ ПОД ЭКЗАМЕН (Screenshot Style) ---
+st.markdown("""
+<style>
+    .exam-container {
+        font-family: 'Times New Roman', serif !important;
+        color: #000000 !important;
+        background-color: #ffffff;
+        line-height: 1.5;
+    }
+    .task-title {
+        font-weight: bold;
+        font-size: 1.2em;
+        margin-bottom: 2px;
+    }
+    .task-points {
+        font-style: italic;
+        margin-bottom: 10px;
+    }
+    .instruction-bold {
+        font-weight: bold;
+        margin-top: 15px;
+    }
+    .source-box {
+        border: 1px solid #000;
+        padding: 15px;
+        margin-top: 20px;
+        background-color: #ffffff;
+    }
+    .source-header {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    /* Убираем лишние отступы у TextArea */
+    .stTextArea textarea {
+        border: 1px solid #000 !important;
+        border-radius: 0px !important;
+        font-family: 'Times New Roman', serif !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- 3. SESSION STATE ---
-# Используем ключи с префиксом 'wr_', чтобы они не конфликтовали с другими частями приложения
 if 'wr_page' not in st.session_state: st.session_state.wr_page = 'home'
-if 'wr_drill_type' not in st.session_state: st.session_state.wr_drill_type = None
 if 'wr_current_task' not in st.session_state: st.session_state.wr_current_task = None
-if 'wr_results' not in st.session_state: st.session_state.wr_results = {}
 
-# --- ПРИНУДИТЕЛЬНЫЙ СТИЛЬ ДЛЯ ЧЕРНОГО ТЕКСТА ---
-st.markdown("""<style> 
-    .stMarkdown, p, div, label, h3 { color: #000000 !important; } 
-    div.stButton > button { border: 2px solid #000 !important; }
-</style>""", unsafe_allow_html=True)
+# Данные на основе скриншота
+tasks = [
+    {
+        "title": "Task 2",
+        "type": "Essay",
+        "points": "16 points",
+        "time": "55 minutes",
+        "instruction": "You are participating in an international youth newspaper essay competition on students’ time management skills. Read the information provided and write an essay in which you:",
+        "bullets": [
+            "formulate the problem raised in the sources and explain why it should be addressed;",
+            "propose and support at least two solutions to the problem which address the causes;",
+            "come to a conclusion."
+        ],
+        "word_limit": "Write between 250–300 words. Texts shorter than 100 words will not be evaluated.",
+        "source1": "Time management is an essential skill for it allows students to effectively balance their academic, personal, and social responsibilities. It helps them stay organized, meet deadlines, reduce stress, improve productivity, and achieve better outcomes.",
+        "source2": "Many students struggle with procrastination and failing to prioritize tasks. Digital distractions and poor planning often lead to last-minute cramming and lower quality of work."
+    }
+]
 
 # --- PAGE: HOME ---
 if st.session_state.wr_page == 'home':
-    st.title("✍️ Writing Section")
-    
-    st.subheader("🏁 Full Task Simulation")
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("Task 1: E-mail", use_container_width=True):
-            st.session_state.wr_drill_type = "Task 1 Email"
-            st.session_state.wr_current_task = random.choice(TASKS_1_EMAIL)
-            st.session_state.wr_page = 'input'
-            st.rerun()
-    with c2:
-        if st.button("Task 2: Full Essay", use_container_width=True):
-            st.session_state.wr_drill_type = "Task 2 Essay"
-            st.session_state.wr_current_task = random.choice(TASKS_2)
-            st.session_state.wr_page = 'input'
-            st.rerun()
-
-    st.write("---")
-    st.subheader("🎯 Section Drills (Task 2 Focus)")
-    d1, d2, d3 = st.columns(3)
-    drills = ["Introduction", "Solutions", "Conclusion"]
-    for i, label in enumerate([d1, d2, d3]):
-        with label:
-            if st.button(drills[i], key=f"dr_{i}", use_container_width=True):
-                st.session_state.wr_drill_type = drills[i]
-                st.session_state.wr_current_task = random.choice(TASKS_2)
-                st.session_state.wr_page = 'input'
-                st.rerun()
+    st.markdown("<div class='exam-container'><h1>Writing Section</h1></div>", unsafe_allow_html=True)
+    if st.button("Start Task 2 (Essay)"):
+        st.session_state.wr_current_task = tasks[0]
+        st.session_state.wr_page = 'input'
+        st.rerun()
 
 # --- PAGE: INPUT ---
 elif st.session_state.wr_page == 'input':
-    task = st.session_state.wr_current_task
-    drill = st.session_state.wr_drill_type
-
-    st.subheader(f"Type: {drill}")
+    t = st.session_state.wr_current_task
     
-    # Разделяем отображение
-    if drill == "Task 1 Email":
-        st.info(f"**Prompt:** {task['prompt']}")
-    elif drill == "Task 2 Essay":
-        st.markdown(f"**Topic:** {task['title']}")
-        st.markdown(f"""
-        <div style="background: #f0f2f6; padding: 15px; border-radius: 5px; border: 1px solid #000; color: #000;">
-        <b>Source 1:</b> {task['source1']}<br><br>
-        <b>Source 2:</b> {task['source2']}
+    # Весь контент оборачиваем в стилизованный div
+    st.markdown(f"""
+    <div class="exam-container">
+        <div class="task-title">{t['title']}</div>
+        <div class="task-points"><i>{t['type']} ({t['points']})</i></div>
+        <div class="instruction-bold">You should spend about {t['time']} on this task.</div>
+        <p>{t['instruction']}</p>
+        <ul style="margin-top: -10px;">
+            {"".join([f"<li>{b}</li>" for b in t['bullets']])}
+        </ul>
+        <div class="instruction-bold">{t['word_limit']}</div>
+        <p><i>Do not forget to use “quotation marks” if you decide to quote a phrase from the sources.</i></p>
+        
+        <div class="source-box">
+            <div class="source-header">Source 1:</div>
+            <div>{t['source1']}</div>
+            <br>
+            <div class="source-header">Source 2:</div>
+            <div>{t['source2']}</div>
         </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.write(f"**Focus:** Write only the **{drill}** for the topic: *{task['title']}*")
+    </div>
+    """, unsafe_allow_html=True)
 
-    user_text = st.text_area("Your response:", height=300)
+    st.write("") # Отступ
+    user_text = st.text_area("Write your essay here:", height=400, label_visibility="collapsed")
     
-    col_back, col_sub = st.columns([1, 4])
-    with col_back:
-        if st.button("⬅️ Back"):
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("⬅ Back"):
             st.session_state.wr_page = 'home'
             st.rerun()
-    with col_sub:
+    with col2:
         if st.button("SUBMIT FOR EVALUATION", use_container_width=True):
-            if len(user_text.split()) < 10:
-                st.error("Please write more text.")
-            else:
-                with st.spinner("AI Examiner is checking..."):
-                    try:
-                        prompt = f"Level: C1 English. Analyze this {drill}. Topic: {task.get('title', 'Email')}. Text: {user_text}"
-                        response = model.generate_content(prompt)
-                        st.session_state.wr_results = {"feedback": response.text}
-                        st.session_state.wr_page = 'results'
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-
-# --- PAGE: RESULTS ---
-elif st.session_state.wr_page == 'results':
-    st.title("📝 Results")
-    st.write(st.session_state.wr_results.get("feedback", "No feedback available."))
-    if st.button("Try Another Task"):
-        st.session_state.wr_page = 'home'
-        st.rerun()
+            st.success("Sent to AI Examiner!")

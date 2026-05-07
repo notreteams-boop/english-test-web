@@ -1,29 +1,5 @@
 import streamlit as st
 
-# 1. Настройка страницы (ТОЛЬКО ЗДЕСЬ ОДИН РАЗ)
-st.set_page_config(page_title="English Exam Coach", page_icon="🎓", layout="centered")
-
-# 2. Тот самый дизайн, который тебе нравится (из Writing)
-st.markdown("""
-<style>
-    .stApp { background-color: #ffffff; }
-    h1, h2, h3, p, li, span, label, div { 
-        color: #000000 !important; 
-        font-family: 'Times New Roman', serif; 
-    }
-    /* Стиль кнопок, чтобы они не были синими */
-    div.stButton > button { 
-        background-color: #fff !important; 
-        color: #000 !important; 
-        border: 1px solid #000 !important; 
-        font-weight: bold; 
-    }
-    div.stButton > button:hover { 
-        background-color: #000 !important; 
-        color: #fff !important; 
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # --- ДАЛЬШЕ ТВОЯ ЛОГИКА ПЕРЕКЛЮЧЕНИЯ (Choice) ---
 if 'choice' not in st.session_state:

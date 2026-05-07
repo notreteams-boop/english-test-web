@@ -217,31 +217,43 @@ elif st.session_state.page == 'input':
         if word_count < 100:
             st.error("Text too short!")
         else:
+            # СНАЧАЛА СОЗДАЕМ ТЕКСТ ЗАПРОСА
+            prompt = f"""
+            You are an English Exam Examiner. Grade this {st.session_state.drill_type}.
+            Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Email'}
+            Text: {user_text}
+            
+            Return ONLY JSON:
+            {{
+              "c1": 0-5, "c2": 0-5, "c3": 0-5, "c4": 0-5, "c5": 0-5,
+              "total": 25,
+              "feedback": "string",
+              "strengths": ["list"],
+              "improvements": ["list"],
+              "corrected": "string"
+            }}
+            """
+
             with st.spinner("Connecting to AI..."):
                 response_text = None
                 errors = []
                 
+                # ТЕПЕРЬ ЦИКЛ СРАБОТАЕТ, ТАК КАК prompt УЖЕ СУЩЕСТВУЕТ
                 for model_name in AVAILABLE_MODELS:
                     try:
-                        # Принудительно создаем объект модели
                         temp_model = genai.GenerativeModel(model_name=model_name)
-                        
-                        # Вызываем генерацию
                         res = temp_model.generate_content(
                             prompt,
-                            generation_config=genai.types.GenerationConfig(
-                                temperature=0.7,
-                            )
+                            generation_config=genai.types.GenerationConfig(temperature=0.7)
                         )
-                        
                         if res and res.text:
                             response_text = res.text
                             break
                     except Exception as e:
                         errors.append(f"{model_name}: {str(e)}")
                         continue 
-                
-                # ОБРАБОТКА РЕЗУЛЬТАТА (ТОЛЬКО ОДИН РАЗ)
+
+                # ... дальше идет код обработки ответа (if response_text:) ...
                 if response_text:
                     try:
                         # Улучшенная очистка JSON

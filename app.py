@@ -1,10 +1,6 @@
 import streamlit as st
 
-st.markdown("""
-<style>
-    .stApp { background-color: #ffffff; }
-</style>
-""", unsafe_allow_html=True)
+
 # Используем session_state, чтобы сайт запомнил, какую кнопку нажал пользователь
 if 'choice' not in st.session_state:
     st.session_state.choice = 'main'

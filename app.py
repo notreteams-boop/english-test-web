@@ -81,9 +81,15 @@ READING_TASKS = [
 # --- 3. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    # Список приоритетных моделей
+    AVAILABLE_MODELS = [
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-latest", 
+        "gemini-1.5-pro", 
+        "gemini-pro"
+    ]
 except Exception as e:
-    st.error(f"API Error: {e}")
+    st.error(f"API Configuration Error: {e}")
     st.stop()
 
 # --- 4. SESSION STATE ---
@@ -181,9 +187,7 @@ elif st.session_state.page == 'reading_results':
         st.session_state.page = 'home'
         st.rerun()
 
-# PAGE: INPUT (ТЕПЕРЬ ЦЕПОЧКА НЕ РАЗОРВАНА)
 elif st.session_state.page == 'input':
-    # 1. Подготовка темы (как и раньше)
     if not st.session_state.current_topic:
         from topics import TASKS_2
         st.session_state.current_topic = random.choice(TASKS_2)
@@ -191,74 +195,69 @@ elif st.session_state.page == 'input':
 
     st.title(f"✍️ Practice: {st.session_state.drill_type}")
     
-    # 2. Отображение задания (Task 1 или Task 2)
+    # Отображение задания
     if "Task 2" in st.session_state.drill_type:
         st.markdown(f"""
-        <div style="border: 2px solid #000; padding: 20px; font-family: 'Times New Roman'; color: #000;">
+        <div style="border: 2px solid #000; padding: 20px; font-family: 'Times New Roman'; color: #000; background: #fff;">
             <h3 style="margin-top:0;">Task 2: Essay</h3>
             <p>Topic: <b>{topic['title']}</b></p>
-            <p style="margin-bottom:5px;"><b>Source 1:</b></p>
-            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic; margin-bottom: 15px;">{topic['source1']}</div>
-            <p style="margin-bottom:5px;"><b>Source 2:</b></p>
-            <div style="border-left: 3px solid #000; padding-left: 15px; font-style: italic;">{topic['source2']}</div>
+            <p><b>Source 1:</b> {topic['source1']}</p>
+            <p><b>Source 2:</b> {topic['source2']}</p>
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.info("Task 1: Write an informal email to your friend based on the prompt provided in your materials.")
+        st.info("Task 1: Write an informal email (120-150 words).")
 
-    # 3. Поле ввода
-    user_text = st.text_area("Your text:", height=400, placeholder="Start writing here...")
+    user_text = st.text_area("Your text:", height=350)
     word_count = len(user_text.split())
-    st.write(f"**Word count: {word_count}**")
+    st.write(f"Words: {word_count}")
 
-    # 4. ЛОГИКА ИИ (Тот самый большой промт)
     if st.button("SUBMIT FOR EVALUATION", use_container_width=True):
         if word_count < 100:
-            st.error("Your text is too short (less than 100 words). It will not be evaluated.")
+            st.error("Text too short!")
         else:
-            with st.spinner("AI Examiner is marking your work..."):
-                # ФОРМИРУЕМ ПРОМТ
+            with st.spinner("Searching for working AI model and evaluating..."):
                 prompt = f"""
-                You are a professional British English examiner. Grade the following student work.
-                Type of Task: {st.session_state.drill_type}
-                Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Informal Email'}
+                You are an English Exam Examiner. Grade this {st.session_state.drill_type}.
+                Topic: {topic['title'] if 'Task 2' in st.session_state.drill_type else 'Email'}
+                Text: {user_text}
                 
-                Student's Text:
-                {user_text}
-
-                Instructions:
-                1. Provide a score from 0 to 5 for each of these 5 criteria:
-                   - c1 (Content/Task completion)
-                   - c2 (Communicative Achievement/Interaction)
-                   - c3 (Organization/Wealth of Language)
-                   - c4 (Grammar Accuracy)
-                   - c5 (Fluency/Punctuation)
-                2. Calculate the Total Score (sum of all criteria, max 25 for full, or 16-20 based on scale).
-                3. Provide 'General Feedback' (overall impression).
-                4. List 'Key Strengths'.
-                5. List 'Areas for Improvement' with specific examples from the text.
-                6. Provide a 'Corrected Version' of the text.
-
-                IMPORTANT: Return ONLY a valid JSON object like this:
+                Return ONLY JSON:
                 {{
-                  "c1": 4, "c2": 3, "c3": 4, "c4": 2, "c5": 3,
-                  "total": 16,
-                  "feedback": "...",
-                  "strengths": ["...", "..."],
-                  "improvements": ["...", "..."],
-                  "corrected": "..."
+                  "c1": 0-5, "c2": 0-5, "c3": 0-5, "c4": 0-5, "c5": 0-5,
+                  "total": sum,
+                  "feedback": "string",
+                  "strengths": ["list"],
+                  "improvements": ["list"],
+                  "corrected": "string"
                 }}
                 """
                 
-                try:
-                    response = model.generate_content(prompt)
-                    # Чистим ответ от Markdown-тегов (иногда ИИ их добавляет)
-                    clean_json = re.search(r'\{.*\}', response.text, re.DOTALL).group()
-                    st.session_state.results_data = eval(clean_json) 
-                    st.session_state.page = 'results'
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error during AI evaluation: {e}")
+                response_text = None
+                # ЦИКЛ ПОДБОРА МОДЕЛИ
+                for model_name in AVAILABLE_MODELS:
+                    try:
+                        temp_model = genai.GenerativeModel(model_name)
+                        res = temp_model.generate_content(prompt)
+                        response_text = res.text
+                        if response_text:
+                            break # Если получили ответ, выходим из цикла
+                    except Exception as model_err:
+                        continue # Если ошибка 404 или другая, пробуем следующую модель
+                
+                if response_text:
+                    try:
+                        # Чистим ответ от лишнего мусора
+                        clean_json = re.search(r'\{.*\}', response_text, re.DOTALL).group()
+                        st.session_state.results_data = eval(clean_json)
+                        st.session_state.page = 'results'
+                        st.rerun()
+                    except:
+                        st.error("AI returned wrong format. Please try again.")
+                else:
+                    st.error("All AI models are currently unavailable (404/500). Check your API Key or Region.")
+
+
 # PAGE: RESULTS
 elif st.session_state.page == 'results':
     st.title("Results")

@@ -48,23 +48,57 @@ except Exception as e:
     st.error(f"API Error: {e}")
     st.stop()
 
-# --- 3. SESSION STATE ---
+# --- SESSION STATE ---
 if 'page' not in st.session_state: st.session_state.page = 'home'
-if 'mode' not in st.session_state: st.session_state.mode = None # 'full' or 'drill'
+if 'mode' not in st.session_state: st.session_state.mode = None 
 if 'drill_type' not in st.session_state: st.session_state.drill_type = None
-if 'current_topic' not in st.session_state: st.session_state.current_topic = ""
+if 'current_topic' not in st.session_state: st.session_state.current_topic = None # Изменил на None для словаря
 if 'results_data' not in st.session_state: st.session_state.results_data = {}
 
+# НОВАЯ ФУНКЦИЯ ДЛЯ ВЫБОРА ТЕМ (из topics.py)
 def get_topic():
     try:
-        with open("topics.txt", "r", encoding="utf-8") as f:
-            return random.choice([l.strip() for l in f.readlines() if l.strip()])
-    except: return "Global Warming and its impact."
+        from topics import TASKS_2
+        return random.choice(TASKS_2)
+    except:
+        # Заглушка, если файл topics.py не найден
+        return {
+            "title": "Global Warming",
+            "source1": "Temperatures are rising globally...",
+            "source2": "Carbon emissions reached a new high..."
+        }
 
-# --- PAGE: HOME ---
+
+
+    # --- PAGE: HOME ---
 if st.session_state.page == 'home':
     st.title("🇬🇧 English Exam Coach")
+    st.subheader("Select a section to practice:")
     
+    col_writ, col_read = st.columns(2)
+    
+    with col_writ:
+        st.markdown("### ✍️ Writing")
+        st.write("Task 1, Task 2 and Drills with AI.")
+        if st.button("GO TO WRITING", use_container_width=True):
+            st.session_state.page = 'writing_menu' # Теперь ведем сюда
+            st.rerun()
+
+    with col_read:
+        st.markdown("### 📖 Reading")
+        st.write("Text comprehension and tasks (No AI).")
+        if st.button("GO TO READING", use_container_width=True):
+            st.session_state.page = 'reading' # Задел на будущее
+            st.rerun()
+
+# --- PAGE: WRITING_MENU ---
+elif st.session_state.page == 'writing_menu':
+    st.title("✍️ Writing Practice")
+    
+    if st.button("⬅️ Back to Home"):
+        st.session_state.page = 'home'
+        st.rerun()
+
     st.subheader("🏁 Full Task Simulation")
     c1, c2 = st.columns(2)
     with c1:

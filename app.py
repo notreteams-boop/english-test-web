@@ -81,11 +81,12 @@ READING_TASKS = [
 # --- 3. API SETUP ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Список приоритетных моделей
+    # Расширенный список для Европы
     AVAILABLE_MODELS = [
-        "gemini-1.5-flash", 
-        "gemini-1.5-flash-latest", 
-        "gemini-1.5-pro", 
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-001",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-pro",
         "gemini-pro"
     ]
 except Exception as e:

@@ -54,6 +54,9 @@ if 'mode' not in st.session_state: st.session_state.mode = None
 if 'drill_type' not in st.session_state: st.session_state.drill_type = None
 if 'current_topic' not in st.session_state: st.session_state.current_topic = None # Изменил на None для словаря
 if 'results_data' not in st.session_state: st.session_state.results_data = {}
+    
+if 'reading_answers' not in st.session_state: st.session_state.reading_answers = {}
+if 'current_reading_task' not in st.session_state: st.session_state.current_reading_task = None
 
 # НОВАЯ ФУНКЦИЯ ДЛЯ ВЫБОРА ТЕМ (из topics.py)
 def get_topic():
@@ -136,6 +139,180 @@ elif st.session_state.page == 'writing_menu':
             st.session_state.page = 'input'
             st.rerun()
 
+# ========================================================
+# ШАГ 3: СТРАНИЦА ТЕСТА (READING)
+# ========================================================
+elif st.session_state.page == 'reading':
+    # 1. Выбираем случайное задание, если оно еще не выбрано
+    if st.session_state.current_reading_task is None:
+        st.session_state.current_reading_task = random.choice(READING_TASKS)
+    
+    task = st.session_state.current_reading_task
+    
+    st.title("📖 Reading Practice")
+    
+    # Кнопка назад
+    if st.button("⬅️ Back to Home"):
+        st.session_state.current_reading_task = None
+        st.session_state.page = 'home'
+        st.rerun()
+
+    st.markdown("### Task 1 (7 points)")
+    st.info("Read the comments and answer the questions. Choose the correct letter (A-E).")
+    
+    # 2. Рисуем таблицу (как на скриншоте)
+    cols = st.columns([0.1, 0.7, 0.2])
+    cols[0].write("**№**")
+    cols[1].write("**Questions**")
+    cols[2].write("**Text**")
+
+    # Цикл создает 7 строк с вопросами и полями ввода
+    for i, q in enumerate(task["questions"], 1):
+        c1, c2, c3 = st.columns([0.1, 0.7, 0.2])
+        c1.write(f"{i}.")
+        c2.write(q)
+        # Сохраняем ввод пользователя
+        st.session_state.reading_answers[f"q{i}"] = c3.text_input("", key=f"q{i}_{task['id']}", max_chars=1).upper()
+
+    # Кнопка проверки
+    if st.button("CHECK ANSWERS", use_container_width=True):
+        st.session_state.page = 'reading_results'
+        st.rerun()
+
+    st.write("---")
+    st.subheader("TEXTS")
+    # Выводим тексты в раскрывающихся списках
+    for name, content in task["texts"].items():
+        with st.expander(f"**Text {name}**"):
+            st.write(content)
+
+
+# ========================================================
+# ШАГ 4: СТРАНИЦА РЕЗУЛЬТАТОВ (READING_RESULTS)
+# ========================================================
+elif st.session_state.page == 'reading_results':
+    st.title("📊 Reading Results")
+    task = st.session_state.current_reading_task
+    score = 0
+    
+    # Сверяем ответы пользователя с правильными
+    for i in range(1, 8):
+        key = f"q{i}"
+        user_ans = st.session_state.reading_answers.get(key, "").strip()
+        correct = task["correct_data"][key]
+        is_correct = user_ans == correct["ans"]
+        
+        if is_correct: 
+            score += 1
+        
+        # Выбираем цвет фона: зеленый если верно, красный если нет
+        bg_color = "#d4edda" if is_correct else "#f8d7da"
+        icon = "✅" if is_correct else "❌"
+        
+        # Рисуем красивую плашку с объяснением
+        st.markdown(f"""
+            <div style="background-color: {bg_color}; padding: 15px; border-radius: 5px; margin-bottom: 10px; color: #000; border: 1px solid #ccc;">
+                <b>Question {i}: {icon}</b><br>
+                Your answer: <b>{user_ans if user_ans else 'No answer'}</b> | Correct: <b>{correct['ans']}</b><br>
+                <div style="margin-top: 5px; font-size: 0.9em; color: #444;">
+                    <i>Why: {correct['exp']}</i>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.subheader(f"Total Score: {score} / 7")
+    
+    if st.button("Finish & Back to Home"):
+        st.session_state.current_reading_task = None
+        st.session_state.page = 'home'
+        st.rerun()
+# --- READING DATA ---
+READING_TASKS = [
+    {
+        "id": 1,
+        "questions": [
+            "Who decided to gain practical skills in a field they knew nothing about?",
+            "Who mentions that their gap year helped them overcome social anxieties?",
+            "Who found that their time away from studies made them more focused on their future degree?",
+            "Who warns that a gap year can be a waste of time if not planned properly?",
+            "Who had to work to fund their travels during the year?",
+            "Who discovered a hidden talent that changed their career path?",
+            "Who felt pressured by their peers' success before starting their gap year?"
+        ],
+        "correct_data": {
+            "q1": {"ans": "A", "exp": "Mark had never worked with animals before but learned to care for injured birds[cite: 10, 12]."},
+            "q2": {"ans": "C", "exp": "Elena was incredibly shy and terrified of strangers, but her job transformed her confidence[cite: 21, 23]."},
+            "q3": {"ans": "E", "exp": "Julian realized how much he missed academic theory after physical labour[cite: 32, 34]."},
+            "q4": {"ans": "D", "exp": "Tom warns that without a clear goal or schedule, you achieve nothing[cite: 27, 29]."},
+            "q5": {"ans": "B", "exp": "Sarah worked in a bakery and a call centre to afford her trip[cite: 15, 16]."},
+            "q6": {"ans": "B", "exp": "Sarah realized she had a natural gift for digital marketing through her vlog[cite: 17, 18]."},
+            "q7": {"ans": "A", "exp": "Mark felt like a failure watching his friends start university while he stayed behind[cite: 10, 11]."}
+        },
+        "texts": {
+            "A. Mark": "After high school, I felt like a failure staying behind... I spent six months volunteering at a wildlife rescue centre. I had never worked with animals before... [cite: 10, 12]",
+            "B. Sarah": "To afford the trip, I spent the first four months working two jobs... I started a travel vlog... realized I had a natural gift for digital marketing[cite: 15, 17].",
+            "C. Elena": "I used to be incredibly shy... I took a part-time job in a busy tourist information office... transformed my confidence[cite: 21, 23].",
+            "D. Tom": "I didn't have a plan... I realized too late that without a clear goal, time just slips away[cite: 26, 27].",
+            "E. Julian": "I took a year off to work in a carpentry workshop... It made me realize how much I actually missed academic theory[cite: 30, 32]."
+        }
+    },
+    {
+        "id": 2,
+        "questions": [
+            "Who realized that their original career choice was based on other people's expectations?",
+            "Who mentions that they initially felt ashamed of not going straight to university?",
+            "Who found that a period of physical work made them appreciate mental work more?",
+            "Who managed to turn a hobby into a source of income during their year off?",
+            "Who emphasizes that a gap year is a good time to learn how to manage finances?",
+            "Who took a gap year because they felt they weren't mature enough for college life?",
+            "Who used their gap year to improve their skills in a foreign language?"
+        ],
+        "correct_data": {
+            "q1": {"ans": "C", "exp": "Maya admitted she only wanted to be a doctor to please her parents[cite: 62, 63]."},
+            "q2": {"ans": "D", "exp": "Liam felt like a 'loser' when he saw his classmates moving into dorms[cite: 67]."},
+            "q3": {"ans": "B", "exp": "Kevin's physical work made him dream of sitting in a library or lecture hall[cite: 59, 60]."},
+            "q4": {"ans": "D", "exp": "Liam started repairing bicycles and turned it into a small business[cite: 68, 69]."},
+            "q5": {"ans": "E", "exp": "Rachel learned to budget and live within her means[cite: 75, 76]."},
+            "q6": {"ans": "A", "exp": "Sophie knew she wasn't ready for the independence of university[cite: 53]."},
+            "q7": {"ans": "A", "exp": "Sophie's fluency in French improved more in six months than in years of school[cite: 54]."}
+        },
+        "texts": {
+            "A. Sophie": "I knew I wasn't ready for the independence of university... my fluency in the language improved more in six months[cite: 53, 54].",
+            "B. Kevin": "Working on a construction site... made me realize how much I had taken my education for granted[cite: 57, 59].",
+            "C. Maya": "I told everyone I wanted to be a doctor... I finally admitted to myself that I only wanted to please them[cite: 62, 63].",
+            "D. Liam": "I felt like a bit of a loser... I started repairing old bicycles... turned into a small business[cite: 67, 69].",
+            "E. Rachel": "Learning how to budget my limited savings... taught me how to be responsible with money[cite: 75, 76]."
+        }
+    },
+    {
+        "id": 3,
+        "questions": [
+            "Who realized that their lack of confidence was their main obstacle to succeeding?",
+            "Who changed their mind about their future career after gaining some work experience?",
+            "Who believes that practical work is the best way to prepare for a university degree?",
+            "Who felt that they were initially being too arrogant about their abilities?",
+            "Who had to deal with the disappointment of a failed plan at the start of their year?",
+            "Who focused on a creative hobby that eventually became their main passion?",
+            "Who used their gap year to prove they could be independent from their family?"
+        ],
+        "correct_data": {
+            "q1": {"ans": "E", "exp": "Oliver realized his only real problem was his own self-doubt[cite: 118]."},
+            "q2": {"ans": "C", "exp": "Jessica was certain she wanted to be a lawyer until she worked in a school[cite: 105, 106]."},
+            "q3": {"ans": "A", "exp": "Chloe believes dealing with customers taught her more than any internship[cite: 96]."},
+            "q4": {"ans": "B", "exp": "Sam admits he had a bit of an ego and thought he was superior[cite: 98, 102]."},
+            "q5": {"ans": "A", "exp": "Chloe's luxury internship was cancelled two weeks before she was due to leave[cite: 94]."},
+            "q6": {"ans": "D", "exp": "Daniel's recording and music production became his main focus[cite: 110, 112]."},
+            "q7": {"ans": "E", "exp": "Oliver forced himself to handle problems without calling his parents for help[cite: 117]."}
+        },
+        "texts": {
+            "A. Chloe": "The company cancelled the program... dealing with difficult customers taught me more than any internship[cite: 94, 96].",
+            "B. Sam": "I was always the top of my class, and I’ll admit I had a bit of an ego... it was a humbling experience[cite: 98, 102].",
+            "C. Jessica": "I was certain I wanted to be a corporate lawyer... seeing the impact a good teacher can have changed everything[cite: 105, 106].",
+            "D. Daniel": "What was once just a hobby became my main focus... creative freedom allowed me to understand[cite: 111, 113].",
+            "E. Oliver": "I forced myself to handle every problem... without calling my parents for help. My only problem was my own self-doubt[cite: 117, 118]."
+        }
+    }
+]
 # --- PAGE: INPUT ---
 # --- PAGE: INPUT ---
 # --- PAGE: INPUT ---

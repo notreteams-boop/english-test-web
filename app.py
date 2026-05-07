@@ -1,70 +1,62 @@
 import streamlit as st
 
-# 1. Настройка страницы (ЕДИНСТВЕННАЯ на всё приложение)
+# 1. Настройка страницы
 st.set_page_config(page_title="English Exam Coach", page_icon="🎓", layout="centered")
 
-# 2. БРОНЕБОЙНЫЙ СТИЛЬ
-# Мы добавляем стили не только для .stApp, но и для всех контейнеров
+# 2. МИНИМАЛЬНЫЙ СТИЛЬ (Убираем "пелену")
 st.markdown("""
 <style>
-    /* 1. Фон для всего, включая подложки */
-    [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
-        background-color: #ffffff !important;
-    }
-
-    /* 2. Текст (черный везде) */
-    h1, h2, h3, p, li, span, label, div, .stMarkdown, [data-testid="stText"] { 
-        color: #000000 !important; 
-        font-family: 'Times New Roman', serif !important; 
-    }
-
-    /* 3. Боковая панель (Sidebar) - тоже делаем белой, чтобы не было контраста */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff !important;
-        border-right: 1px solid #eee;
-    }
-
-    /* 4. Кнопки (Экзаменационный стиль) */
-    div.stButton > button { 
+    /* Красим только фон самого приложения, не трогая контентные блоки */
+    .stApp { 
         background-color: #ffffff !important; 
-        color: #000000 !important; 
-        border: 2px solid #000000 !important; 
-        border-radius: 0px !important;
-        font-weight: bold !important;
     }
-    div.stButton > button:hover { 
-        background-color: #000000 !important; 
-        color: #ffffff !important; 
+    /* Цвет текста для меню */
+    .main-title { text-align: center; color: #000000; font-family: 'Times New Roman', serif; }
+    
+    /* Делаем боковую панель видимой */
+    [data-testid="stSidebar"] {
+        background-color: #f8f9fa !important;
+        border-right: 1px solid #ddd;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. ЛОГИКА ---
+# 3. ЛОГИКА НАВИГАЦИИ
 if 'choice' not in st.session_state:
     st.session_state.choice = 'main'
 
+def go_to_menu():
+    st.session_state.choice = 'main'
+    st.rerun()
+
+# --- ЭКРАН МЕНЮ ---
 if st.session_state.choice == 'main':
-    st.markdown("<h1 style='text-align: center;'>🎓 English Exam Coach</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>🎓 English Exam Coach</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    c1, c2 = st.columns(2)
-    with c1:
+    col1, col2 = st.columns(2)
+    with col1:
         if st.button("✍️ Writing Section", use_container_width=True):
             st.session_state.choice = 'writing'
             st.rerun()
-    with c2:
+    with col2:
         if st.button("📖 Reading Section", use_container_width=True):
             st.session_state.choice = 'reading'
             st.rerun()
 
+# --- ЭКРАН WRITING ---
 elif st.session_state.choice == 'writing':
-    if st.sidebar.button("⬅️ Menu"):
-        st.session_state.choice = 'main'
-        st.rerun()
-    import writing_app 
+    if st.sidebar.button("⬅️ Назад в меню"):
+        go_to_menu()
+    
+    # Используем exec для запуска файла, это надежнее чем import внутри if
+    with open("writing_app.py", encoding="utf-8") as f:
+        exec(f.read())
 
+# --- ЭКРАН READING ---
 elif st.session_state.choice == 'reading':
-    if st.sidebar.button("⬅️ Menu"):
-        st.session_state.choice = 'main'
-        st.rerun()
-    import reading_app
+    if st.sidebar.button("⬅️ Назад в меню"):
+        go_to_menu()
+    
+    with open("reading_app.py", encoding="utf-8") as f:
+        exec(f.read())

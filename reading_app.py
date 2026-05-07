@@ -2,52 +2,6 @@ import streamlit as st
 import random
 
 # --- 1. СТИЛИ (Исправленный блок для стабильного фона) ---
-st.markdown("""
-<style>
-    /* Жестко фиксируем белый фон для всего приложения */
-    .stApp { 
-        background-color: #ffffff !important; 
-    }
-    
-    /* Фиксируем черный цвет текста для всех элементов */
-    h1, h2, h3, p, li, span, label, div, .stMarkdown { 
-        color: #000000 !important; 
-        font-family: 'Times New Roman', serif !important; 
-    }
-
-    /* Таблица и рамки */
-    .exam-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid black; }
-    .exam-table th, .exam-table td { border: 1px solid black; padding: 10px; text-align: left; color: black !important; }
-    
-    .source-box { 
-        border-left: 3px solid #000; 
-        padding-left: 15px; 
-        font-style: italic; 
-        margin-bottom: 20px; 
-        background-color: #fcfcfc !important; 
-        color: #000 !important;
-    }
-
-    /* Цвета ответов */
-    .correct { color: #2e7d32 !important; font-weight: bold; }
-    .wrong { color: #d32f2f !important; font-weight: bold; }
-    .explanation { 
-        background-color: #f0f2f6 !important; 
-        padding: 15px; 
-        border-radius: 5px; 
-        border-left: 5px solid #000; 
-        margin-top: 10px; 
-        font-size: 15px; 
-        color: #000 !important; 
-    }
-
-    /* Настройка выпадающих списков (чтобы были видны на белом) */
-    .stSelectbox div[data-baseweb="select"] {
-        background-color: #fff !important;
-        border: 1px solid #000 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # --- 2. ДАННЫЕ ЗАДАНИЙ (Без изменений) ---
 TASKS = [

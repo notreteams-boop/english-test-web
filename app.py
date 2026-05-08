@@ -1,19 +1,17 @@
 import streamlit as st
 
-# 1. Настройка страницы
-st.set_page_config(page_title="English Exam Coach", page_icon="🎓", layout="centered")
+# ─── 1. Page config ───────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="English Exam Coach",
+    page_icon="🎓",
+    layout="centered",
+)
 
-# 2. МИНИМАЛЬНЫЙ СТИЛЬ (Убираем "пелену")
+# ─── 2. Global style ──────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Красим только фон самого приложения, не трогая контентные блоки */
-    .stApp { 
-        background-color: #ffffff !important; 
-    }
-    /* Цвет текста для меню */
+    .stApp { background-color: #ffffff !important; }
     .main-title { text-align: center; color: #000000; font-family: 'Times New Roman', serif; }
-    
-    /* Делаем боковую панель видимой */
     [data-testid="stSidebar"] {
         background-color: #f8f9fa !important;
         border-right: 1px solid #ddd;
@@ -21,56 +19,60 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. ЛОГИКА НАВИГАЦИИ
-if 'choice' not in st.session_state:
-    st.session_state.choice = 'main'
+# ─── 3. Navigation state ──────────────────────────────────────────────────────
+if "choice" not in st.session_state:
+    st.session_state.choice = "main"
 
-def go_to_menu():
-    st.session_state.choice = 'main'
-    st.rerun()
-
-# --- ЭКРАН МЕНЮ ---
-if st.session_state.choice == 'main':
+# ─── 4. MAIN MENU ─────────────────────────────────────────────────────────────
+if st.session_state.choice == "main":
     st.markdown("<h1 class='main-title'>🎓 English Exam Coach</h1>", unsafe_allow_html=True)
     st.write("---")
-    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✍️ Writing Section", use_container_width=True):
-            st.session_state.choice = 'writing'
+            st.session_state.choice = "writing"
             st.rerun()
     with col2:
         if st.button("📖 Reading Section", use_container_width=True):
-            st.session_state.choice = 'reading'
+            st.session_state.choice = "reading"
             st.rerun()
 
-# --- ЭКРАН WRITING ---
-elif st.session_state.choice == 'writing':
+# ─── 5. WRITING SECTION ───────────────────────────────────────────────────────
+elif st.session_state.choice == "writing":
     if st.sidebar.button("⬅️ Back to Menu"):
-        st.session_state.choice = 'main'
+        st.session_state.choice = "main"
         st.rerun()
-    
-    # Выбор конкретного задания в боковой панели
+
     writing_mode = st.sidebar.radio("Select Task:", ["Task 1: E-mail", "Task 2: Essay"])
-    
+
     if writing_mode == "Task 1: E-mail":
         try:
-            with open("writing_task1.py", encoding="utf-8") as f:
-                exec(f.read())
-        except FileNotFoundError:
-            st.error("Файл writing_task1.py не найден. Убедись, что ты его создал.")
-            
+            from writing1 import writing1_page   # ← импортируем функцию
+            writing1_page()                       # ← вызываем её
+        except ImportError:
+            st.error("Файл writing1.py не найден. Убедись, что он лежит рядом с app.py.")
+        except Exception as e:
+            st.error(f"Ошибка в writing1.py: {e}")
+
     elif writing_mode == "Task 2: Essay":
         try:
-            with open("writing_task2.py", encoding="utf-8") as f:
-                exec(f.read())
-        except FileNotFoundError:
-            st.error("Файл writing_task2.py не найден.")
+            from writing2 import writing2_page
+            writing2_page()
+        except ImportError:
+            st.error("Файл writing2.py не найден.")
+        except Exception as e:
+            st.error(f"Ошибка в writing2.py: {e}")
 
-# --- ЭКРАН READING ---
-elif st.session_state.choice == 'reading':
-    if st.sidebar.button("⬅️ Назад в меню"):
-        go_to_menu()
-    
-    with open("reading_app.py", encoding="utf-8") as f:
-        exec(f.read())
+# ─── 6. READING SECTION ───────────────────────────────────────────────────────
+elif st.session_state.choice == "reading":
+    if st.sidebar.button("⬅️ Back to Menu"):
+        st.session_state.choice = "main"
+        st.rerun()
+
+    try:
+        from reading_app import reading_page
+        reading_page()
+    except ImportError:
+        st.error("Файл reading_app.py не найден.")
+    except Exception as e:
+        st.error(f"Ошибка в reading_app.py: {e}")

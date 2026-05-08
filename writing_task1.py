@@ -108,16 +108,42 @@ if st.session_state.current_task_text:
             st.error("Text is too short.")
         else:
             with st.spinner("Grading..."):
-                eval_prompt = f"""
-                Examine this email. Rubric: Content (0-3), Organization (0-3), Language (0-3). Total: 9.
-                Student text: {user_input}
-                FORMAT:
-                TOTAL: [X]/9
-                Saturs: [X]/3 | Organizācija: [X]/3 | Valoda: [X]/3
-                CORRECTED_TEXT: [Full text, errors in **bold**]
-                No other words.
-                """
-                st.session_state.grading_result = model.generate_content(eval_prompt).text
+                # --- ОБНОВЛЕННЫЙ СТРОГИЙ ПРОМПТ ---
+eval_prompt = f"""
+Act as a VERY STRICT and SKEPTICAL English Exam Examiner. Your goal is to find errors and deduct points. 
+Do not be nice. A score of 3/3 is ONLY for perfect, native-level work.
+
+Grade this email based on these STRICT criteria:
+
+1. Saturs (Content) [0-3]:
+   - 3: All points covered in detail, perfect tone.
+   - 2: One point is slightly missed or tone is inconsistent.
+   - 1: Only half of the info is there.
+   - 0: Task not fulfilled.
+
+2. Organizācija (Organization) [0-3]:
+   - 3: Perfect paragraphs, logical flow, sophisticated linking words (not just 'and', 'but').
+   - 2: Standard structure, simple linking words.
+   - 1: Messy structure, difficult to follow.
+   - 0: Random sentences.
+
+3. Valoda (Language) [0-3]:
+   - 3: ZERO grammar/spelling mistakes. Advanced vocabulary.
+   - 2: 1-3 minor mistakes, simple vocabulary.
+   - 1: Many mistakes that hinder understanding.
+   - 0: Total mess.
+
+Student's text: 
+{user_input}
+
+FORMAT (STRICT):
+TOTAL: [X]/9
+Saturs: [X]/3 | Organizācija: [X]/3 | Valoda: [X]/3
+CORRECTED_TEXT: [Full text, errors in **bold**]
+
+No positive feedback. No "Good job". Just the numbers and the corrected text.
+"""
+st.session_state.grading_result = model.generate_content(eval_prompt).text
                 st.rerun()
 
 # --- 5. РЕЗУЛЬТАТЫ ---

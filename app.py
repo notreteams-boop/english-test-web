@@ -46,12 +46,26 @@ if st.session_state.choice == 'main':
 
 # --- ЭКРАН WRITING ---
 elif st.session_state.choice == 'writing':
-    if st.sidebar.button("⬅️ Назад в меню"):
-        go_to_menu()
+    if st.sidebar.button("⬅️ Back to Menu"):
+        st.session_state.choice = 'main'
+        st.rerun()
     
-    # Используем exec для запуска файла, это надежнее чем import внутри if
-    with open("writing_app.py", encoding="utf-8") as f:
-        exec(f.read())
+    # Выбор конкретного задания в боковой панели
+    writing_mode = st.sidebar.radio("Select Task:", ["Task 1: E-mail", "Task 2: Essay"])
+    
+    if writing_mode == "Task 1: E-mail":
+        try:
+            with open("writing_task1.py", encoding="utf-8") as f:
+                exec(f.read())
+        except FileNotFoundError:
+            st.error("Файл writing_task1.py не найден. Убедись, что ты его создал.")
+            
+    elif writing_mode == "Task 2: Essay":
+        try:
+            with open("writing_task2.py", encoding="utf-8") as f:
+                exec(f.read())
+        except FileNotFoundError:
+            st.error("Файл writing_task2.py не найден.")
 
 # --- ЭКРАН READING ---
 elif st.session_state.choice == 'reading':

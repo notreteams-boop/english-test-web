@@ -91,7 +91,7 @@ Return ONLY the plain announcement text — no markdown headers, no asterisks.""
 # ─────────────────────────────────────────────
 # CHECKER PROMPT
 # ─────────────────────────────────────────────
-CHECKER_PROMPT = """You are a strict but fair English exam grader.
+CHECKER_PROMPT = """You are a strict English exam grader.
 
 TASK the student was given:
 Write an e-mail to apply for a volunteer position. Cover:
